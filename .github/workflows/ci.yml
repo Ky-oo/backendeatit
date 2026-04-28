@@ -25,13 +25,6 @@ jobs:
         ports:
           - 3306:3306
 
-        options: >-
-          --health-cmd="timeout 30s bash -c 'until mariadb -h 127.0.0.1 -uroot -e \"SELECT 1;\" --silent; do sleep 2; done'"
-          --health-start-period=60s
-          --health-interval=10s
-          --health-timeout=35s
-          --health-retries=10
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
