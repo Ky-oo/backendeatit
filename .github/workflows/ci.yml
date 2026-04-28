@@ -11,6 +11,7 @@ env:
   JWT_SECRET: ${{ secrets.JWT_SECRET }}
   DB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DOTENV_PRIVATE_KEY: ${{ secrets.DOTENV_PRIVATE_KEY }}
 
 jobs:
   test-and-build:
