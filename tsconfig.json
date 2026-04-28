@@ -1,0 +1,21 @@
+{
+  "version": "2.4.2",
+  "compilerOptions": {
+    "target": "esnext", // Utilise les dernières fonctionnalités JavaScript (comme async/await)
+    "module": "NodeNext", // Aligné avec l'exécution ESM Node.js
+    "experimentalDecorators": true, // Active le support des décorateurs
+    "emitDecoratorMetadata": true, // Permet de générer des métadonnées pour les décorateurs
+    "moduleResolution": "NodeNext",
+    "strict": true, // Active les vérifications strictes
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node"],
+    "outDir": "dist"
+  },
+  "ts-node": {
+    "files": true
+  },
+  "include": ["./**/*"],
+  "exclude": ["node_modules", "dist"]
+}

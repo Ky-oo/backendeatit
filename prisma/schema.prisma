@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id          String       @id @default(uuid())
+  googleId    String?      @unique
+  firstname   String
+  lastname    String
+  email       String       @unique
+  password    String
+  picture     String?
+  phoneNumber String?
+  role       String       @default("USER")
+  createdAt   DateTime     @default(now())
+  restaurants Restaurant[]
+  orders      Order[]
+  city    String
+  cp      String
+  address String
+  details String?
+}
+
+model Restaurant {
+  id           String       @id @default(uuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  name         String      @unique
+  description  String
+  image        String
+  rating       Float      @default(0)
+  deliveryTime String
+  deliveryFee  Float
+  cuisine      String
+  distance     Int
+  orders       Order[]
+  dishes       Dish[]
+}
+
+model Dish {
+  id           String      @id @default(uuid())
+  restaurantId String
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  name         String
+  description  String
+  price        Float
+  image        String?
+  orderItems   OrderItem[]
+}
+
+model Order {
+  id           String       @id @default(uuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id])
+  restaurantId String
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  date         DateTime
+  total        Float
+  status       OrderStatus @default(EN_COURS)
+  items        OrderItem[]
+}
+
+model OrderItem {
+  id         String  @id @default(uuid())
+  orderId    String
+  order      Order   @relation(fields: [orderId], references: [id])
+  dishId     String
+  dish       Dish    @relation(fields: [dishId], references: [id])
+  quantity   Int
+  price      Float
+}
+
+enum OrderStatus {
+  EN_COURS
+  LIVREE
+  ANNULEE
+}
+
