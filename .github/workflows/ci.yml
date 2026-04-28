@@ -22,7 +22,6 @@ jobs:
         env:
           MARIADB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
           MARIADB_DATABASE: eatit_test
-        healthcheck: mariadb ping
         ports:
           - 3306:3306
 
