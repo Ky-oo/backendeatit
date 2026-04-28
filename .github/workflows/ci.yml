@@ -24,7 +24,7 @@ jobs:
           MYSQL_PWD: ${{ secrets.DB_ROOT_PASSWORD }}
           MARIADB_DATABASE: eatit_test
         options: >-
-          --health-cmd="bash -c 'until mysqladmin ping -h localhost -uroot --silent; do sleep 2; done'"
+          --health-cmd="bash -c 'until mysqladmin select 1 -h localhost -u root --silent; do sleep 2; done'"
         ports:
           - 3306:3306
 
