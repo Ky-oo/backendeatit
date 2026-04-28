@@ -9,7 +9,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   JWT_SECRET: ${{ secrets.JWT_SECRET }}
-  MARIADB_ROOT_PASSWORD: ${{ secrets.MARIADB_ROOT_PASSWORD }}
+  MARIADB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
 
 jobs:
   test-and-build:
