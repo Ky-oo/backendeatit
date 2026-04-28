@@ -21,16 +21,17 @@ jobs:
         image: mariadb:latest
         env:
           MARIADB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
-          MYSQL_PWD: ${{ secrets.DB_ROOT_PASSWORD }}
           MARIADB_DATABASE: eatit_test
+        healthcheck: mariadb ping
+        ports:
+          - 3306:3306
+
         options: >-
           --health-cmd="timeout 30s bash -c 'until mariadb -h 127.0.0.1 -uroot -e \"SELECT 1;\" --silent; do sleep 2; done'"
           --health-start-period=60s
           --health-interval=10s
           --health-timeout=35s
           --health-retries=10
-        ports:
-          - 3306:3306
 
     steps:
       - name: Checkout code
@@ -44,10 +45,7 @@ jobs:
 
       - name: Wait for MariaDB to be ready
         run: |
-          until mariadb -h localhost -uroot -p"$DB_ROOT_PASSWORD" -e "SELECT 1;" --silent; do
-            echo "Waiting for MariaDB to be ready..."
-            sleep 5
-          done
+          bash -c 'until mariadb -h localhost -uroot -p${{ secrets.DB_ROOT_PASSWORD }} -e "SELECT 1;" --silent; do sleep 2; done'
 
       - name: Install dependencies
         run: npm ci
