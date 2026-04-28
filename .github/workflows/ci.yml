@@ -44,7 +44,7 @@ jobs:
         env:
           MYSQL_PWD: ${{ secrets.DB_ROOT_PASSWORD }}
         run: |
-          bash -c 'until mariadb -h localhost -uroot -e "SELECT 1;" --silent; do sleep 2; done'
+          bash -c 'until mariadb -h 127.0.0.1 -uroot -e "SELECT 1;" --silent; do sleep 2; done'
 
       - name: Install dependencies
         run: npm ci
