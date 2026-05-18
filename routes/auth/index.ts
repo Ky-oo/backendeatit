@@ -53,7 +53,7 @@ export const authRoutes = async (app: FastifyInstance) => {
     ) => {
       app.log.info({ email: request.body.email }, "Login attempt");
       const user = await authService.login(request.body);
-      const token = app.jwt.sign({ id: user.id }, { expiresIn: "1s" });
+      const token = app.jwt.sign({ id: user.id }, { expiresIn: "15m" });
       const refreshToken = await authService.createRefreshToken(user.id);
       app.log.info("New access token generated for user:" + user);
       return reply.status(200).send({ token, refreshToken });
@@ -78,7 +78,7 @@ export const authRoutes = async (app: FastifyInstance) => {
       const user = await authService.rotateRefreshToken(
         request.body.refreshToken,
       );
-      const token = app.jwt.sign({ id: user.id }, { expiresIn: "1s" });
+      const token = app.jwt.sign({ id: user.id }, { expiresIn: "15m" });
       return reply.status(200).send({
         token,
         refreshToken: user.refreshToken,

@@ -47,12 +47,9 @@ describe("Authentication Integration Tests", () => {
 
       // ASSERT - Vérifier les résultats
       expect(response.statusCode).toBe(201); // 201 = Created
-      expect(response.json()).toHaveProperty("token");
-
-      // Vérifier que le token est valide
-      const token = response.json().token;
-      expect(token).toBeTruthy();
-      expect(typeof token).toBe("string");
+      expect(response.json()).toHaveProperty("email", newUser.email);
+      expect(response.json()).toHaveProperty("role", "USER");
+      expect(response.json()).not.toHaveProperty("password");
 
       // Vérifier que l'utilisateur est réellement dans la base de données
       const user = await prisma.user.findUnique({
@@ -190,6 +187,55 @@ describe("Authentication Integration Tests", () => {
       expect(response.json()).toHaveProperty("title", "Unauthorized");
       expect(response.json().type).not.toHaveProperty("token");
       expect(response.json().type).toMatch(/unauthorized/i);
+    });
+  });
+
+  describe("GET /api/auth/me", () => {
+    let authToken: string;
+
+    beforeEach(async () => {
+      await server.inject({
+        method: "POST",
+        url: "/api/auth/register",
+        payload: {
+          email: "me@example.com",
+          password: "password123",
+          firstname: "Test",
+          lastname: "User",
+          city: "Paris",
+          cp: "75001",
+          address: "1 Rue de Rivoli",
+        },
+      });
+
+      const loginResponse = await server.inject({
+        method: "POST",
+        url: "/api/auth/login",
+        payload: { email: "me@example.com", password: "password123" },
+      });
+      authToken = loginResponse.json().token;
+    });
+
+    it("should return authenticated user profile", async () => {
+      const response = await server.inject({
+        method: "GET",
+        url: "/api/auth/me",
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toHaveProperty("email", "me@example.com");
+      expect(response.json()).toHaveProperty("role", "USER");
+      expect(response.json()).not.toHaveProperty("password");
+    });
+
+    it("should return 401 without token", async () => {
+      const response = await server.inject({
+        method: "GET",
+        url: "/api/auth/me",
+      });
+
+      expect(response.statusCode).toBe(401);
     });
   });
 });
