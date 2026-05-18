@@ -1,4 +1,4 @@
-import fastify, { FastifyError, FastifyReply, FastifyRequest } from "fastify";
+import fastify, { FastifyReply, FastifyRequest } from "fastify";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import "./plugins/dotenvx.js";
@@ -16,49 +16,6 @@ const __dirname = dirname(__filename);
 
 const server = fastify({
   logger: true,
-});
-
-server.setErrorHandler((error, request, reply) => {
-  server.log.error({
-    err: error,
-    url: request.url,
-    method: request.method,
-  });
-
-  if (error instanceof AppError) {
-    const problemDetail = error.problemDetail;
-    problemDetail.instance = request.url;
-    return reply.status(error.statusCode).send(problemDetail);
-  }
-
-  const validationError = error as FastifyError;
-  if (validationError.code === "FST_ERR_CTP_INVALID_JSON_BODY") {
-    return reply.status(400).send({
-      type: "urn:app:error:invalid-json",
-      title: "Invalid JSON",
-      status: 400,
-      detail: "Request body must be valid JSON",
-      instance: request.url,
-    });
-  }
-
-  if (validationError.code === "FST_ERR_VALIDATION") {
-    return reply.status(400).send({
-      type: "urn:app:error:validation",
-      title: "Validation Error",
-      status: 400,
-      detail: validationError.message,
-      instance: request.url,
-    });
-  }
-
-  reply.status(500).send({
-    type: "urn:app:error:internal",
-    title: "Internal Server Error",
-    status: 500,
-    detail: "An unexpected error occurred",
-    instance: request.url,
-  });
 });
 
 server.get("/health", async () => {
