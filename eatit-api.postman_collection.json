@@ -1,0 +1,967 @@
+{
+  "info": {
+    "_postman_id": "eatit-api-collection-v1",
+    "name": "EatIt API",
+    "description": "Backend EatIt — Fastify REST API with JWT authentication.\n\n**Setup:**\n1. `base_url` est déjà configuré sur `http://localhost:3000`\n2. Exécuter **Login** → `{{token}}` et `{{refresh_token}}` sont sauvegardés automatiquement\n3. Toutes les routes authentifiées utilisent `{{token}}` via le Bearer auth de la collection\n4. Remplacer `{{restaurant_id}}`, `{{dish_id}}`, `{{order_id}}` avec de vrais IDs après les créations\n\n**Rôles:**\n- `USER` : créer et voir ses commandes\n- `RESTAURANT` : gérer ses restaurants et plats, voir ses commandes\n- `ADMIN` : créer des restaurants",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000", "type": "default" },
+    { "key": "token", "value": "", "type": "default" },
+    { "key": "refresh_token", "value": "", "type": "default" },
+    { "key": "restaurant_id", "value": "REPLACE_ME", "type": "default" },
+    { "key": "dish_id", "value": "REPLACE_ME", "type": "default" },
+    { "key": "order_id", "value": "REPLACE_ME", "type": "default" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"firstname\": \"John\",\n  \"lastname\": \"Doe\",\n  \"city\": \"Paris\",\n  \"cp\": \"75001\",\n  \"address\": \"1 rue de la Paix\",\n  \"phoneNumber\": \"+33600000000\",\n  \"picture\": \"https://example.com/avatar.jpg\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Register a new user account. Returns the created user (role defaults to USER)."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"id\": \"cmb1abc123def\",\n  \"email\": \"user@example.com\",\n  \"role\": \"USER\",\n  \"firstname\": \"John\",\n  \"lastname\": \"Doe\",\n  \"city\": \"Paris\",\n  \"cp\": \"75001\",\n  \"address\": \"1 rue de la Paix\",\n  \"phoneNumber\": \"+33600000000\",\n  \"picture\": \"https://example.com/avatar.jpg\"\n}"
+            },
+            {
+              "name": "400 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"error\": {\n    \"statusCode\": 400,\n    \"message\": \"body/email must match format \\\"email\\\"\"\n  }\n}"
+            },
+            {
+              "name": "409 Conflict",
+              "status": "Conflict",
+              "code": 409,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"error\": {\n    \"statusCode\": 409,\n    \"message\": \"Email already in use\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.token) {",
+                  "  pm.collectionVariables.set('token', res.token);",
+                  "  console.log('Token saved:', res.token.substring(0, 20) + '...');",
+                  "}",
+                  "if (res.refreshToken) {",
+                  "  pm.collectionVariables.set('refresh_token', res.refreshToken);",
+                  "  console.log('Refresh token saved');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login and receive JWT access + refresh tokens.\n\n**Le test script sauvegarde automatiquement `{{token}}` et `{{refresh_token}}`.**"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtYjFhYmMxMjMiLCJpYXQiOjE3NDc1MDAwMDB9.SIGNATURE\",\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtYjFhYmMxMjMiLCJpYXQiOjE3NDc1MDAwMDB9.SIGNATURE\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"error\": {\n    \"statusCode\": 401,\n    \"message\": \"Invalid credentials\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.token) {",
+                  "  pm.collectionVariables.set('token', res.token);",
+                  "  console.log('New token saved');",
+                  "}",
+                  "if (res.refreshToken) {",
+                  "  pm.collectionVariables.set('refresh_token', res.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "refresh"]
+            },
+            "description": "Rotate refresh token and get a new access token. The old refresh token is invalidated."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+            },
+            {
+              "name": "401 Unauthorized - expired",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"error\": {\n    \"statusCode\": 401,\n    \"message\": \"Invalid or expired refresh token\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Me (JWT payload)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Get the currently authenticated user's id, email and role from JWT payload."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"id\": \"cmb1abc123def\",\n  \"email\": \"user@example.com\",\n  \"role\": \"USER\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"error\": {\n    \"statusCode\": 401,\n    \"message\": \"Unauthorized\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "me"]
+            },
+            "description": "Get the authenticated user's full profile."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"id\": \"cmb1abc123def\",\n  \"email\": \"user@example.com\",\n  \"role\": \"USER\",\n  \"firstname\": \"John\",\n  \"lastname\": \"Doe\",\n  \"city\": \"Paris\",\n  \"cp\": \"75001\",\n  \"address\": \"1 rue de la Paix\",\n  \"phoneNumber\": \"+33600000000\",\n  \"picture\": null,\n  \"details\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstname\": \"Jane\",\n  \"city\": \"Lyon\",\n  \"cp\": \"69001\",\n  \"address\": \"2 rue Victor Hugo\",\n  \"phoneNumber\": \"+33611223344\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "me"]
+            },
+            "description": "Update the authenticated user's profile. All fields are optional. Can also update `password` (min 6 chars)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"id\": \"cmb1abc123def\",\n  \"email\": \"user@example.com\",\n  \"role\": \"USER\",\n  \"firstname\": \"Jane\",\n  \"lastname\": \"Doe\",\n  \"city\": \"Lyon\",\n  \"cp\": \"69001\",\n  \"address\": \"2 rue Victor Hugo\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete My Account",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "me"]
+            },
+            "description": "Delete the authenticated user's account and all related data. Irreversible."
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "text",
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Restaurants",
+      "item": [
+        {
+          "name": "List Restaurants",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/restaurants?limit=20&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "restaurants"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Nombre max de résultats (1-100, défaut: 20)"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Nombre de résultats à ignorer (défaut: 0)"
+                },
+                {
+                  "key": "cuisine",
+                  "value": "Française",
+                  "description": "Filtrer par type de cuisine",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List all restaurants with optional pagination and cuisine filter. Public route."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"cmb1rest01abc\",\n      \"name\": \"Le Gourmet\",\n      \"cuisine\": \"Française\",\n      \"description\": \"Restaurant gastronomique au coeur de Paris\",\n      \"deliveryFee\": 2.50,\n      \"deliveryTime\": \"30-45 min\",\n      \"distance\": 1.2,\n      \"image\": \"https://example.com/restaurant.jpg\",\n      \"rating\": 4.5,\n      \"userId\": \"cmb1abc123def\"\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"limit\": 20,\n    \"offset\": 0\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "My Restaurants",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/restaurants/mine",
+              "host": ["{{base_url}}"],
+              "path": ["api", "restaurants", "mine"]
+            },
+            "description": "Get all restaurants owned by the authenticated user. Requires RESTAURANT role."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"restaurants\": [\n    {\n      \"id\": \"cmb1rest01abc\",\n      \"name\": \"Le Gourmet\",\n      \"cuisine\": \"Française\",\n      \"description\": \"Restaurant gastronomique\",\n      \"deliveryFee\": 2.50,\n      \"deliveryTime\": \"30-45 min\",\n      \"distance\": 1.2,\n      \"image\": \"https://example.com/restaurant.jpg\",\n      \"rating\": 4.5,\n      \"userId\": \"cmb1abc123def\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Restaurant by ID",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/restaurants/{{restaurant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "restaurants", "{{restaurant_id}}"]
+            },
+            "description": "Get a single restaurant by ID. Public route."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"restaurant\": {\n    \"id\": \"cmb1rest01abc\",\n    \"name\": \"Le Gourmet\",\n    \"cuisine\": \"Française\",\n    \"description\": \"Restaurant gastronomique au coeur de Paris\",\n    \"deliveryFee\": 2.50,\n    \"deliveryTime\": \"30-45 min\",\n    \"distance\": 1.2,\n    \"image\": \"https://example.com/restaurant.jpg\",\n    \"rating\": 4.5,\n    \"userId\": \"cmb1abc123def\"\n  }\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"error\": {\n    \"statusCode\": 404,\n    \"message\": \"Restaurant not found\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Restaurant",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Le Gourmet\",\n  \"cuisine\": \"Française\",\n  \"description\": \"Restaurant gastronomique au coeur de Paris\",\n  \"deliveryFee\": 2.50,\n  \"deliveryTime\": \"30-45 min\",\n  \"distance\": 1.2,\n  \"image\": \"https://example.com/restaurant.jpg\",\n  \"rating\": 4.5,\n  \"userId\": \"REPLACE_WITH_RESTAURANT_OWNER_ID\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/restaurants",
+              "host": ["{{base_url}}"],
+              "path": ["api", "restaurants"]
+            },
+            "description": "Create a new restaurant. Requires ADMIN role. `userId` must be an existing user with RESTAURANT role."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"restaurant\": {\n    \"id\": \"cmb1rest01abc\",\n    \"name\": \"Le Gourmet\",\n    \"cuisine\": \"Française\",\n    \"description\": \"Restaurant gastronomique au coeur de Paris\",\n    \"deliveryFee\": 2.50,\n    \"deliveryTime\": \"30-45 min\",\n    \"distance\": 1.2,\n    \"image\": \"https://example.com/restaurant.jpg\",\n    \"rating\": 4.5,\n    \"userId\": \"cmb1abc123def\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Restaurant",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Le Gourmet Premium\",\n  \"deliveryFee\": 3.00,\n  \"rating\": 4.8\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/restaurants/{{restaurant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "restaurants", "{{restaurant_id}}"]
+            },
+            "description": "Update a restaurant. Requires RESTAURANT role. Must be the owner of the restaurant."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"restaurant\": {\n    \"id\": \"cmb1rest01abc\",\n    \"name\": \"Le Gourmet Premium\",\n    \"cuisine\": \"Française\",\n    \"description\": \"Restaurant gastronomique au coeur de Paris\",\n    \"deliveryFee\": 3.00,\n    \"deliveryTime\": \"30-45 min\",\n    \"distance\": 1.2,\n    \"image\": \"https://example.com/restaurant.jpg\",\n    \"rating\": 4.8,\n    \"userId\": \"cmb1abc123def\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dishes",
+      "item": [
+        {
+          "name": "Create Dish",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"restaurantId\": \"{{restaurant_id}}\",\n  \"name\": \"Steak Frites\",\n  \"description\": \"Entrecôte grillée avec frites maison\",\n  \"price\": 18.50,\n  \"image\": \"https://example.com/steak.jpg\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/dishes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "dishes"]
+            },
+            "description": "Create a new dish for a restaurant. Requires RESTAURANT role. Must own the restaurant."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"dish\": {\n    \"id\": \"cmb1dish01abc\",\n    \"restaurantId\": \"cmb1rest01abc\",\n    \"name\": \"Steak Frites\",\n    \"description\": \"Entrecôte grillée avec frites maison\",\n    \"price\": 18.50,\n    \"image\": \"https://example.com/steak.jpg\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "List Dishes by Restaurant",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/dishes/restaurant/{{restaurant_id}}?limit=20&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "dishes", "restaurant", "{{restaurant_id}}"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Nombre max de résultats (1-100, défaut: 20)"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Nombre de résultats à ignorer (défaut: 0)"
+                },
+                {
+                  "key": "minPrice",
+                  "value": "5",
+                  "description": "Prix minimum (€)",
+                  "disabled": true
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "30",
+                  "description": "Prix maximum (€)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List dishes for a specific restaurant with optional price range filters and pagination. Public route."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"cmb1dish01abc\",\n      \"restaurantId\": \"cmb1rest01abc\",\n      \"name\": \"Steak Frites\",\n      \"description\": \"Entrecôte grillée avec frites maison\",\n      \"price\": 18.50,\n      \"image\": \"https://example.com/steak.jpg\"\n    },\n    {\n      \"id\": \"cmb1dish02abc\",\n      \"restaurantId\": \"cmb1rest01abc\",\n      \"name\": \"Salade César\",\n      \"description\": \"Salade fraîche avec poulet grillé\",\n      \"price\": 12.00,\n      \"image\": null\n    }\n  ],\n  \"pagination\": {\n    \"total\": 2,\n    \"limit\": 20,\n    \"offset\": 0\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Dish by ID",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/dishes/{{dish_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "dishes", "{{dish_id}}"]
+            },
+            "description": "Get a single dish by ID. Public route."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"dish\": {\n    \"id\": \"cmb1dish01abc\",\n    \"restaurantId\": \"cmb1rest01abc\",\n    \"name\": \"Steak Frites\",\n    \"description\": \"Entrecôte grillée avec frites maison\",\n    \"price\": 18.50,\n    \"image\": \"https://example.com/steak.jpg\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Dish",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 20.00,\n  \"description\": \"Entrecôte grillée avec frites maison et salade verte\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/dishes/{{dish_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "dishes", "{{dish_id}}"]
+            },
+            "description": "Update a dish. Requires RESTAURANT role. Must be owner of the restaurant."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"dish\": {\n    \"id\": \"cmb1dish01abc\",\n    \"restaurantId\": \"cmb1rest01abc\",\n    \"name\": \"Steak Frites\",\n    \"description\": \"Entrecôte grillée avec frites maison et salade verte\",\n    \"price\": 20.00,\n    \"image\": \"https://example.com/steak.jpg\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Dish",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/dishes/{{dish_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "dishes", "{{dish_id}}"]
+            },
+            "description": "Delete a dish. Requires RESTAURANT role. Must be owner of the restaurant."
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "text",
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "My Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/orders/mine",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "mine"]
+            },
+            "description": "Get all orders of the authenticated user. Requires USER role."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"orders\": [\n    {\n      \"id\": \"cmb1order1abc\",\n      \"userId\": \"cmb1abc123def\",\n      \"restaurantId\": \"cmb1rest01abc\",\n      \"date\": \"2026-05-18T10:00:00.000Z\",\n      \"total\": 37.00,\n      \"status\": \"EN_COURS\",\n      \"items\": [\n        {\n          \"id\": \"cmb1item01abc\",\n          \"dishId\": \"cmb1dish01abc\",\n          \"quantity\": 2,\n          \"price\": 18.50\n        }\n      ]\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Restaurant Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/orders/restaurant",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "restaurant"]
+            },
+            "description": "Get all orders for all restaurants owned by the authenticated user. Requires RESTAURANT role."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"orders\": [\n    {\n      \"id\": \"cmb1order1abc\",\n      \"userId\": \"cmb1user2abc\",\n      \"restaurantId\": \"cmb1rest01abc\",\n      \"date\": \"2026-05-18T10:00:00.000Z\",\n      \"total\": 37.00,\n      \"status\": \"EN_COURS\",\n      \"items\": [\n        {\n          \"id\": \"cmb1item01abc\",\n          \"dishId\": \"cmb1dish01abc\",\n          \"quantity\": 2,\n          \"price\": 18.50\n        }\n      ]\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"restaurantId\": \"{{restaurant_id}}\",\n  \"items\": [\n    { \"dishId\": \"{{dish_id}}\", \"quantity\": 2 }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders"]
+            },
+            "description": "Create a new order. Requires authentication (any role)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.order && res.order.id) {",
+                  "  pm.collectionVariables.set('order_id', res.order.id);",
+                  "  console.log('Order ID saved:', res.order.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"order\": {\n    \"id\": \"cmb1order1abc\",\n    \"userId\": \"cmb1abc123def\",\n    \"restaurantId\": \"cmb1rest01abc\",\n    \"date\": \"2026-05-18T10:00:00.000Z\",\n    \"total\": 37.00,\n    \"status\": \"EN_COURS\",\n    \"items\": [\n      {\n        \"id\": \"cmb1item01abc\",\n        \"dishId\": \"cmb1dish01abc\",\n        \"quantity\": 2,\n        \"price\": 18.50\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"LIVREE\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orders/{{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "{{order_id}}"]
+            },
+            "description": "Update order status. Allowed values: `EN_COURS`, `LIVREE`, `ANNULEE`. Requires authentication."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"order\": {\n    \"id\": \"cmb1order1abc\",\n    \"userId\": \"cmb1abc123def\",\n    \"restaurantId\": \"cmb1rest01abc\",\n    \"date\": \"2026-05-18T10:00:00.000Z\",\n    \"total\": 37.00,\n    \"status\": \"LIVREE\",\n    \"items\": [\n      {\n        \"id\": \"cmb1item01abc\",\n        \"dishId\": \"cmb1dish01abc\",\n        \"quantity\": 2,\n        \"price\": 18.50\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Order",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/orders/{{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "{{order_id}}"]
+            },
+            "description": "Delete an order. Requires authentication."
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "text",
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "GraphQL",
+      "item": [
+        {
+          "name": "restaurants (public)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\n  restaurants {\n    id\n    name\n    cuisine\n    rating\n    deliveryFee\n    deliveryTime\n    description\n    distance\n    image\n    userId\n  }\n}",
+                "variables": ""
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            },
+            "description": "Query all restaurants (public). Also available at {{base_url}}/graphiql for in-browser testing."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"data\": {\n    \"restaurants\": [\n      {\n        \"id\": \"cmb1rest01abc\",\n        \"name\": \"Le Gourmet\",\n        \"cuisine\": \"Française\",\n        \"rating\": 4.5,\n        \"deliveryFee\": 2.5,\n        \"deliveryTime\": \"30-45 min\",\n        \"description\": \"Restaurant gastronomique\",\n        \"distance\": 1.2,\n        \"image\": \"https://example.com/restaurant.jpg\",\n        \"userId\": \"cmb1abc123def\"\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "restaurant (by ID, public)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query GetRestaurant($id: String!) {\n  restaurant(id: $id) {\n    id\n    name\n    cuisine\n    rating\n    dishes {\n      id\n      name\n      price\n    }\n  }\n}",
+                "variables": "{\n  \"id\": \"{{restaurant_id}}\"\n}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            },
+            "description": "Query a single restaurant by ID including its dishes (public)."
+          },
+          "response": []
+        },
+        {
+          "name": "restaurantDishes (public)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query RestaurantDishes($restaurantId: String!) {\n  restaurantDishes(restaurantId: $restaurantId) {\n    id\n    name\n    price\n    description\n    image\n  }\n}",
+                "variables": "{\n  \"restaurantId\": \"{{restaurant_id}}\"\n}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            },
+            "description": "Query all dishes for a restaurant (public)."
+          },
+          "response": []
+        },
+        {
+          "name": "dishes (all, public)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\n  dishes {\n    id\n    name\n    price\n    restaurantId\n  }\n}",
+                "variables": ""
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            },
+            "description": "Query all dishes across all restaurants (public)."
+          },
+          "response": []
+        },
+        {
+          "name": "orders (auth required)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\n  orders {\n    id\n    status\n    total\n    createdAt\n    restaurantId\n    items {\n      dishId\n      quantity\n    }\n  }\n}",
+                "variables": ""
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            },
+            "description": "Query authenticated user's orders (requires Bearer token in Authorization header)."
+          },
+          "response": []
+        },
+        {
+          "name": "me (auth required)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\n  me {\n    id\n    email\n    role\n    firstname\n    lastname\n    city\n    cp\n    address\n  }\n}",
+                "variables": ""
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            },
+            "description": "Get authenticated user's full profile via GraphQL (requires Bearer token)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "WebSocket",
+      "item": [
+        {
+          "name": "Restaurant Feed (WS)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "ws://localhost:3000/ws/restaurant",
+              "protocol": "ws",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["ws", "restaurant"]
+            },
+            "description": "WebSocket endpoint for restaurant order notifications.\n\nUtiliser **New > WebSocket Request** dans Postman pour se connecter.\n\n**1. Connexion** → connecter à `ws://localhost:3000/ws/restaurant`\n\n**2. Authentification** → envoyer :\n```json\n{\"event\": \"authenticate\", \"token\": \"YOUR_JWT_TOKEN\"}\n```\n\n**3. Ping/Pong** → envoyer :\n```json\n{\"event\": \"ping\"}\n```\nRéponse attendue : `{\"event\": \"pong\"}`\n\n**Réponse CONNECTED attendue après auth :**\n```json\n{\"event\": \"connected\", \"restaurantId\": \"cmb1rest01abc\"}\n```"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
