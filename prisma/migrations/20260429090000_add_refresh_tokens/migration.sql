@@ -5,7 +5,7 @@ CREATE TABLE `RefreshToken` (
     `expiresAt` DATETIME(3) NOT NULL,
     `revokedAt` DATETIME(3) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
+    `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     UNIQUE INDEX `RefreshToken_tokenHash_key`(`tokenHash`),
     INDEX `RefreshToken_userId_idx`(`userId`),
