@@ -52,6 +52,31 @@ export const restaurantSchema = `
     address: String!
   }
 
+  input CreateDishInput {
+    restaurantId: String!
+    name: String!
+    description: String!
+    price: Float!
+    image: String
+  }
+
+  input UpdateDishInput {
+    name: String
+    description: String
+    price: Float
+    image: String
+  }
+
+  input OrderItemInput {
+    dishId: String!
+    quantity: Int!
+  }
+
+  input CreateOrderInput {
+    restaurantId: String!
+    items: [OrderItemInput!]!
+  }
+
   type Query {
     restaurants: [Restaurant!]!
     restaurant(id: String!): Restaurant
@@ -59,5 +84,12 @@ export const restaurantSchema = `
     dishes: [Dish!]!
     orders: [Order!]!
     me: User
+  }
+
+  type Mutation {
+    createDish(input: CreateDishInput!): Dish!
+    updateDish(id: String!, input: UpdateDishInput!): Dish!
+    createOrder(input: CreateOrderInput!): Order!
+    updateOrderStatus(id: String!, status: String!): Order!
   }
 `;

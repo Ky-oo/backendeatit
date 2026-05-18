@@ -202,5 +202,7 @@ export const login = (prisma: PrismaClient, input: LoginInput) =>
 export const createRefreshToken = (prisma: PrismaClient, userId: string) =>
   new AuthService(prisma).createRefreshToken(userId);
 
-export const rotateRefreshToken = (prisma: PrismaClient, refreshToken: string) =>
-  new AuthService(prisma).rotateRefreshToken(refreshToken);
+export const rotateRefreshToken = (
+  prisma: PrismaClient,
+  refreshToken: string,
+) => new AuthService(prisma).rotateRefreshToken(refreshToken);

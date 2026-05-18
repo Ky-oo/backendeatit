@@ -938,6 +938,149 @@
             "description": "Get authenticated user's full profile via GraphQL (requires Bearer token)."
           },
           "response": []
+        },
+        {
+          "name": "mutation createDish (auth required)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation CreateDish($input: CreateDishInput!) {\n  createDish(input: $input) {\n    id\n    restaurantId\n    name\n    description\n    price\n    image\n  }\n}",
+                "variables": "{\n  \"input\": {\n    \"restaurantId\": \"{{restaurant_id}}\",\n    \"name\": \"Steak Frites\",\n    \"description\": \"Entrecôte grillée avec frites maison\",\n    \"price\": 18.50,\n    \"image\": \"https://example.com/steak.jpg\"\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            },
+            "description": "Create a new dish via GraphQL. Requires RESTAURANT role (Bearer token)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"data\": {\n    \"createDish\": {\n      \"id\": \"cmb1dish01abc\",\n      \"restaurantId\": \"cmb1rest01abc\",\n      \"name\": \"Steak Frites\",\n      \"description\": \"Entrecôte grillée avec frites maison\",\n      \"price\": 18.5,\n      \"image\": \"https://example.com/steak.jpg\"\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "mutation updateDish (auth required)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation UpdateDish($id: String!, $input: UpdateDishInput!) {\n  updateDish(id: $id, input: $input) {\n    id\n    name\n    price\n    description\n    image\n  }\n}",
+                "variables": "{\n  \"id\": \"{{dish_id}}\",\n  \"input\": {\n    \"price\": 20.00,\n    \"description\": \"Entrecôte grillée avec frites et salade verte\"\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            },
+            "description": "Update a dish via GraphQL. Requires RESTAURANT role and ownership (Bearer token)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"data\": {\n    \"updateDish\": {\n      \"id\": \"cmb1dish01abc\",\n      \"name\": \"Steak Frites\",\n      \"price\": 20.0,\n      \"description\": \"Entrecôte grillée avec frites et salade verte\",\n      \"image\": \"https://example.com/steak.jpg\"\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "mutation createOrder (auth required)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data && res.data.createOrder && res.data.createOrder.id) {",
+                  "  pm.collectionVariables.set('order_id', res.data.createOrder.id);",
+                  "  console.log('Order ID saved:', res.data.createOrder.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation CreateOrder($input: CreateOrderInput!) {\n  createOrder(input: $input) {\n    id\n    restaurantId\n    total\n    status\n    createdAt\n    items {\n      dishId\n      quantity\n    }\n  }\n}",
+                "variables": "{\n  \"input\": {\n    \"restaurantId\": \"{{restaurant_id}}\",\n    \"items\": [\n      { \"dishId\": \"{{dish_id}}\", \"quantity\": 2 }\n    ]\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            },
+            "description": "Create a new order via GraphQL. Requires authentication (any role). Saves {{order_id}} automatically."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"data\": {\n    \"createOrder\": {\n      \"id\": \"cmb1order1abc\",\n      \"restaurantId\": \"cmb1rest01abc\",\n      \"total\": 37.0,\n      \"status\": \"EN_COURS\",\n      \"createdAt\": \"2026-05-18T10:00:00.000Z\",\n      \"items\": [\n        { \"dishId\": \"cmb1dish01abc\", \"quantity\": 2 }\n      ]\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "mutation updateOrderStatus (auth required)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation UpdateOrderStatus($id: String!, $status: String!) {\n  updateOrderStatus(id: $id, status: $status) {\n    id\n    status\n    total\n    updatedAt\n  }\n}",
+                "variables": "{\n  \"id\": \"{{order_id}}\",\n  \"status\": \"LIVREE\"\n}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            },
+            "description": "Update an order status via GraphQL. Allowed values: EN_COURS, LIVREE, ANNULEE. Requires authentication."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"data\": {\n    \"updateOrderStatus\": {\n      \"id\": \"cmb1order1abc\",\n      \"status\": \"LIVREE\",\n      \"total\": 37.0,\n      \"updatedAt\": \"2026-05-18T11:00:00.000Z\"\n    }\n  }\n}"
+            }
+          ]
         }
       ]
     },
