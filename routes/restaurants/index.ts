@@ -98,7 +98,7 @@ export const RestaurantsRoutes = async (app: FastifyInstance) => {
     "/",
     {
       schema: {
-        description: "Create a new restaurant (ADMIN only)",
+        description: "Create a new restaurant (ADMIN or RESTAURANT only)",
         body: CreateRestaurantSchema,
         response: {
           201: CreateRestaurantResponseSchema,
@@ -108,7 +108,7 @@ export const RestaurantsRoutes = async (app: FastifyInstance) => {
           409: ErrorResponseSchema,
         },
       },
-      onRequest: [app.authorize(["ADMIN"])],
+      onRequest: [app.authorize(["ADMIN", "RESTAURANT"])],
     },
     async (
       request: FastifyRequest<{ Body: CreateRestaurantRequest }>,
@@ -152,6 +152,32 @@ export const RestaurantsRoutes = async (app: FastifyInstance) => {
         request.user,
       );
       return reply.status(200).send({ restaurant });
+    },
+  );
+
+  app.delete<{ Params: { id: string } }>(
+    "/:id",
+    {
+      schema: {
+        description: "Delete a restaurant (owner or ADMIN)",
+        params: Type.Object({
+          id: Type.String({ description: "Restaurant ID" }),
+        }),
+        response: {
+          204: Type.Null(),
+          401: ErrorResponseSchema,
+          403: ErrorResponseSchema,
+          404: ErrorResponseSchema,
+        },
+      },
+      onRequest: [app.authorize(["RESTAURANT", "ADMIN"])],
+    },
+    async (
+      request: FastifyRequest<{ Params: { id: string } }>,
+      reply: FastifyReply,
+    ) => {
+      await restaurantService.deleteRestaurant(request.params.id, request.user);
+      return reply.status(204).send();
     },
   );
 };

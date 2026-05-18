@@ -166,14 +166,19 @@ export const createRestaurantResolvers = (
         select: { id: true, role: true },
       });
       if (!user) throw new UnauthorizedError("User not found");
-      const validStatuses = ["EN_COURS", "LIVREE", "ANNULEE"] as const;
+      const validStatuses = [
+        "CONFIRMED",
+        "PREPARING",
+        "READY",
+        "DELIVERED",
+      ] as const;
       if (!validStatuses.includes(status as (typeof validStatuses)[number])) {
         throw new Error(`Invalid status. Allowed: ${validStatuses.join(", ")}`);
       }
       const orderService = new OrderService(app.prisma);
       const { order } = await orderService.updateOrder(
         id,
-        { status: status as "EN_COURS" | "LIVREE" | "ANNULEE" },
+        { status: status as "CONFIRMED" | "PREPARING" | "READY" | "DELIVERED" },
         user,
       );
       return order;

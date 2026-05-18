@@ -11,5 +11,10 @@ export default defineConfig({
     env: {
       DATABASE_URL: process.env.DATABASE_URL_TEST!,
     },
+    coverage: {
+      provider: "v8",
+      include: ["services/**/*.ts"],
+      reporter: ["text", "lcov"],
+    },
   },
 });

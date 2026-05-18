@@ -156,7 +156,7 @@ async function main() {
       restaurantId: ids.restaurant,
       date: new Date("2026-04-29T12:00:00.000Z"),
       total: 29.5,
-      status: "EN_COURS",
+      status: "PENDING",
       items: {
         create: [
           {
@@ -179,7 +179,7 @@ async function main() {
       restaurantId: ids.restaurant,
       date: new Date("2026-04-29T12:00:00.000Z"),
       total: 29.5,
-      status: "EN_COURS",
+      status: "PENDING",
       items: {
         deleteMany: {},
         create: [

@@ -54,6 +54,34 @@ export const ordersRoutes = async (app: FastifyInstance) => {
     },
   );
 
+  app.get<{ Params: { id: string } }>(
+    "/:id",
+    {
+      schema: {
+        description:
+          "Get a single order by ID (USER: own orders only — RESTAURANT: orders of their restaurants)",
+        params: Type.Object({ id: Type.String({ description: "Order ID" }) }),
+        response: {
+          200: CreateOrderResponseSchema,
+          401: ErrorResponseSchema,
+          403: ErrorResponseSchema,
+          404: ErrorResponseSchema,
+        },
+      },
+      onRequest: [app.authenticate],
+    },
+    async (
+      request: FastifyRequest<{ Params: { id: string } }>,
+      reply: FastifyReply,
+    ) => {
+      const result = await orderService.getOrderById(
+        request.params.id,
+        request.user,
+      );
+      return reply.status(200).send(result);
+    },
+  );
+
   app.post<{ Body: CreateOrderRequest }>(
     "/",
     {
@@ -119,13 +147,14 @@ export const ordersRoutes = async (app: FastifyInstance) => {
     "/:id",
     {
       schema: {
-        description: "Delete an order",
+        description: "Cancel an order (only if status is PENDING)",
         params: Type.Object({ id: Type.String({ description: "Order ID" }) }),
         response: {
           204: Type.Null(),
           401: ErrorResponseSchema,
           403: ErrorResponseSchema,
           404: ErrorResponseSchema,
+          409: ErrorResponseSchema,
         },
       },
       onRequest: [app.authenticate],

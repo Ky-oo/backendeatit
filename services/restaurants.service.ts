@@ -141,7 +141,7 @@ export default class RestaurantService {
     id: string,
     userId: string,
     updateData: Partial<CreateRestaurantInput>,
-    user: { role: string },
+    user: { id: string; role: string },
   ): Promise<Restaurant> => {
     const restaurant = await this.prisma.restaurant.findUnique({
       where: {
@@ -169,5 +169,29 @@ export default class RestaurantService {
       data,
     });
     return updatedRestaurant;
+  };
+
+  deleteRestaurant = async (
+    id: string,
+    user: { id: string; role: string },
+  ): Promise<void> => {
+    const restaurant = await this.prisma.restaurant.findUnique({
+      where: {
+        id,
+      },
+    });
+    if (!restaurant) {
+      throw new NotFoundError("Restaurant not found");
+    }
+    if (restaurant.userId !== user.id && user.role !== "ADMIN") {
+      throw new ForbiddenError(
+        "You are not authorized to delete this restaurant",
+      );
+    }
+    await this.prisma.restaurant.delete({
+      where: {
+        id,
+      },
+    });
   };
 }

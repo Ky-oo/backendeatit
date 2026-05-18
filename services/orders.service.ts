@@ -1,7 +1,12 @@
 import type { PrismaClient } from "../generated/prisma/client.js";
-import { ForbiddenError, NotFoundError } from "../common/exceptions.js";
+import {
+  BadRequestError,
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+} from "../common/exceptions.js";
 import { notifyRestaurant } from "./websocket.service.js";
-import type { OrderItemInput } from "../schemas/orders.schema.js";
+import type { OrderItemInput, OrderStatus } from "../schemas/orders.schema.js";
 
 type CreateOrderInput = {
   userId: string;
@@ -15,7 +20,15 @@ type Actor = {
 };
 
 type UpdateOrderInput = {
-  status: "EN_COURS" | "LIVREE" | "ANNULEE";
+  status: "CONFIRMED" | "PREPARING" | "READY" | "DELIVERED";
+};
+
+/** Valid one-step forward transitions */
+const VALID_TRANSITIONS: Partial<Record<OrderStatus, OrderStatus>> = {
+  PENDING: "CONFIRMED",
+  CONFIRMED: "PREPARING",
+  PREPARING: "READY",
+  READY: "DELIVERED",
 };
 
 export default class OrderService {
@@ -89,6 +102,28 @@ export default class OrderService {
     return { orders };
   };
 
+  getOrderById = async (id: string, actor: Actor) => {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: { items: true, restaurant: true },
+    });
+
+    if (!order) {
+      throw new NotFoundError("Order not found");
+    }
+
+    // USER: only their own orders — RESTAURANT: only orders for their restaurants
+    const isCustomer = order.userId === actor.id;
+    const isRestaurantOwner = order.restaurant.userId === actor.id;
+    const isAdmin = actor.role === "ADMIN";
+
+    if (!isCustomer && !isRestaurantOwner && !isAdmin) {
+      throw new ForbiddenError("You do not have access to this order");
+    }
+
+    return { order };
+  };
+
   getRestaurantOwnerOrders = async (ownerId: string) => {
     const orders = await this.prisma.order.findMany({
       where: {
@@ -103,29 +138,36 @@ export default class OrderService {
     return { orders };
   };
 
-  updateOrder = async (
-    id: string,
-    input: UpdateOrderInput,
-    actor: Actor,
-  ) => {
+  updateOrder = async (id: string, input: UpdateOrderInput, actor: Actor) => {
     const order = await this.prisma.order.findUnique({
       where: { id },
-      include: {
-        restaurant: true,
-      },
+      include: { restaurant: true },
     });
 
     if (!order) {
       throw new NotFoundError("Order not found");
     }
 
-    this.assertOrderOwner(order, actor);
+    // Only the restaurant owner or an admin can change order status
+    const isRestaurantOwner = order.restaurant.userId === actor.id;
+    const isAdmin = actor.role === "ADMIN";
+    if (!isRestaurantOwner && !isAdmin) {
+      throw new ForbiddenError(
+        "Only the restaurant owner can update order status",
+      );
+    }
+
+    // Validate transition: must follow PENDING→CONFIRMED→PREPARING→READY→DELIVERED
+    const expectedNext = VALID_TRANSITIONS[order.status as OrderStatus];
+    if (!expectedNext || expectedNext !== input.status) {
+      throw new ConflictError(
+        `Invalid transition: ${order.status} → ${input.status}. Expected next status: ${expectedNext ?? "none (order is delivered)"}`,
+      );
+    }
 
     const updated = await this.prisma.order.update({
       where: { id },
-      data: {
-        status: input.status,
-      },
+      data: { status: input.status },
       include: { items: true },
     });
 
@@ -135,37 +177,27 @@ export default class OrderService {
   deleteOrder = async (id: string, actor: Actor): Promise<void> => {
     const order = await this.prisma.order.findUnique({
       where: { id },
-      include: {
-        restaurant: true,
-      },
+      include: { restaurant: true },
     });
 
     if (!order) {
       throw new NotFoundError("Order not found");
     }
 
-    this.assertOrderOwner(order, actor);
-
-    await this.prisma.order.delete({
-      where: { id },
-    });
-  };
-
-  private assertOrderOwner = (
-    order: {
-      userId: string;
-      restaurant: {
-        userId: string;
-      };
-    },
-    actor: Actor,
-  ) => {
+    // Only the customer who placed the order (or admin) can cancel it
     const isCustomerOwner = order.userId === actor.id;
-    const isRestaurantOwner = order.restaurant.userId === actor.id;
     const isAdmin = actor.role === "ADMIN";
-
-    if (!isCustomerOwner && !isRestaurantOwner && !isAdmin) {
-      throw new ForbiddenError("You are not the owner of this order");
+    if (!isCustomerOwner && !isAdmin) {
+      throw new ForbiddenError("Only the customer can cancel their own order");
     }
+
+    // Can only cancel while still pending
+    if (order.status !== "PENDING") {
+      throw new ConflictError(
+        `Order cannot be cancelled: current status is ${order.status}`,
+      );
+    }
+
+    await this.prisma.order.delete({ where: { id } });
   };
 }

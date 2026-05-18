@@ -11,11 +11,18 @@ export const CreateOrderSchema = Type.Object({
 });
 
 export const UpdateOrderSchema = Type.Object({
-  status: Type.Union([
-    Type.Literal("EN_COURS"),
-    Type.Literal("LIVREE"),
-    Type.Literal("ANNULEE"),
-  ]),
+  status: Type.Union(
+    [
+      Type.Literal("CONFIRMED"),
+      Type.Literal("PREPARING"),
+      Type.Literal("READY"),
+      Type.Literal("DELIVERED"),
+    ],
+    {
+      description:
+        "New status. Transitions: PENDING→CONFIRMED→PREPARING→READY→DELIVERED",
+    },
+  ),
 });
 
 export const OrderItemSchema = Type.Object({
@@ -46,3 +53,10 @@ export const GetOrdersResponseSchema = Type.Object({
 export type CreateOrderRequest = Static<typeof CreateOrderSchema>;
 export type UpdateOrderRequest = Static<typeof UpdateOrderSchema>;
 export type OrderItemInput = Static<typeof OrderItemInputSchema>;
+
+export type OrderStatus =
+  | "PENDING"
+  | "CONFIRMED"
+  | "PREPARING"
+  | "READY"
+  | "DELIVERED";
