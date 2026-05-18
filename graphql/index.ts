@@ -1,4 +1,4 @@
-import { FastifyInstance } from "fastify";
+import { FastifyInstance, FastifyRequest } from "fastify";
 import mercurius from "mercurius";
 import { restaurantSchema } from "./restaurant.schema.js";
 import { createRestaurantResolvers } from "./restaurant.resolvers.js";
@@ -9,6 +9,16 @@ export const registerGraphQL = async (app: FastifyInstance) => {
   await app.register(mercurius, {
     schema: restaurantSchema,
     resolvers,
-    graphiql: process.env.NODE_ENV === "development",
+    graphiql: true,
+    context: (request: FastifyRequest) => {
+      try {
+        const auth = app.jwt.verify<{ id: string }>(
+          request.headers.authorization?.replace("Bearer ", "") ?? "",
+        );
+        return { auth };
+      } catch {
+        return { auth: null };
+      }
+    },
   });
 };

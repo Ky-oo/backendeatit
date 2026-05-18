@@ -1,6 +1,12 @@
-import type { IResolvers } from "mercurius";
+import type { IResolvers, MercuriusContext } from "mercurius";
 import type { FastifyInstance } from "fastify";
-import { NotFoundError } from "../common/exceptions.js";
+import { NotFoundError, UnauthorizedError } from "../common/exceptions.js";
+
+declare module "mercurius" {
+  interface MercuriusContext {
+    auth: { id: string } | null;
+  }
+}
 
 export const createRestaurantResolvers = (
   app: FastifyInstance,
@@ -32,6 +38,30 @@ export const createRestaurantResolvers = (
         throw new NotFoundError(`Restaurant ${restaurantId} not found`);
       }
       return app.prisma.dish.findMany({ where: { restaurantId } });
+    },
+
+    dishes: async () => {
+      return app.prisma.dish.findMany();
+    },
+
+    orders: async (_parent, _args, context) => {
+      const userId = context.auth?.id;
+      if (!userId) {
+        throw new UnauthorizedError("Authentication required");
+      }
+      return app.prisma.order.findMany({
+        where: { userId },
+        include: { items: true },
+        orderBy: { date: "desc" },
+      });
+    },
+
+    me: async (_parent, _args, context) => {
+      const userId = context.auth?.id;
+      if (!userId) {
+        throw new UnauthorizedError("Authentication required");
+      }
+      return app.prisma.user.findUnique({ where: { id: userId } });
     },
   },
 

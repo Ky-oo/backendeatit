@@ -39,9 +39,25 @@ export const restaurantSchema = `
     quantity: Int!
   }
 
+  type User {
+    id: String!
+    email: String!
+    role: String!
+    firstname: String!
+    lastname: String!
+    picture: String
+    phoneNumber: String
+    city: String!
+    cp: String!
+    address: String!
+  }
+
   type Query {
     restaurants: [Restaurant!]!
     restaurant(id: String!): Restaurant
     restaurantDishes(restaurantId: String!): [Dish!]!
+    dishes: [Dish!]!
+    orders: [Order!]!
+    me: User
   }
 `;
