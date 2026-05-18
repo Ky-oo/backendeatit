@@ -1,3 +1,4 @@
+import { Type } from "@sinclair/typebox";
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { ErrorResponseSchema } from "../../schemas/error.schema.js";
 import RestaurantService from "../../services/restaurants.service.js";
@@ -21,6 +22,8 @@ export const RestaurantsRoutes = async (app: FastifyInstance) => {
     "/",
     {
       schema: {
+        description:
+          "List all restaurants with optional pagination and cuisine filter",
         querystring: RestaurantQuerySchema,
         response: {
           200: PaginatedRestaurantsResponseSchema,
@@ -46,6 +49,7 @@ export const RestaurantsRoutes = async (app: FastifyInstance) => {
     "/mine",
     {
       schema: {
+        description: "Get all restaurants owned by the authenticated user",
         response: {
           200: getAllResturantsResponseSchema,
           401: ErrorResponseSchema,
@@ -66,6 +70,10 @@ export const RestaurantsRoutes = async (app: FastifyInstance) => {
     "/:id",
     {
       schema: {
+        description: "Get a restaurant by ID",
+        params: Type.Object({
+          id: Type.String({ description: "Restaurant ID" }),
+        }),
         response: {
           200: CreateRestaurantResponseSchema,
           404: ErrorResponseSchema,
@@ -90,9 +98,11 @@ export const RestaurantsRoutes = async (app: FastifyInstance) => {
     "/",
     {
       schema: {
+        description: "Create a new restaurant (ADMIN only)",
         body: CreateRestaurantSchema,
         response: {
           201: CreateRestaurantResponseSchema,
+          400: ErrorResponseSchema,
           401: ErrorResponseSchema,
           403: ErrorResponseSchema,
           409: ErrorResponseSchema,
@@ -113,9 +123,14 @@ export const RestaurantsRoutes = async (app: FastifyInstance) => {
     "/:id",
     {
       schema: {
+        description: "Update a restaurant (owner or ADMIN)",
+        params: Type.Object({
+          id: Type.String({ description: "Restaurant ID" }),
+        }),
         body: UpdateRestaurantSchema,
         response: {
           200: UpdateRestaurantResponseSchema,
+          400: ErrorResponseSchema,
           401: ErrorResponseSchema,
           403: ErrorResponseSchema,
           404: ErrorResponseSchema,

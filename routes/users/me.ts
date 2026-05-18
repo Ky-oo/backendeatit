@@ -16,6 +16,7 @@ export const usersRoutes = async (app: FastifyInstance) => {
     "/me",
     {
       schema: {
+        description: "Get the authenticated user's full profile",
         response: {
           200: UserProfileSchema,
           401: ErrorResponseSchema,
@@ -32,9 +33,11 @@ export const usersRoutes = async (app: FastifyInstance) => {
     "/me",
     {
       schema: {
+        description: "Update the authenticated user's profile",
         body: UpdateUserSchema,
         response: {
           200: UpdateUserResponseSchema,
+          400: ErrorResponseSchema,
           401: ErrorResponseSchema,
           409: ErrorResponseSchema,
         },
@@ -58,6 +61,8 @@ export const usersRoutes = async (app: FastifyInstance) => {
     "/me",
     {
       schema: {
+        description:
+          "Delete the authenticated user's account and all related data",
         response: {
           204: Type.Null(),
           401: ErrorResponseSchema,

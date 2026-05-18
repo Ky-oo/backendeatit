@@ -2,6 +2,7 @@ import fastify, { FastifyError, FastifyReply, FastifyRequest } from "fastify";
 import cors from "@fastify/cors";
 import "./plugins/dotenvx.js";
 import swagger from "@fastify/swagger";
+import swaggerUi from "@fastify/swagger-ui";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { registerPlugins } from "./plugins/index.js";
@@ -69,16 +70,42 @@ const start = async () => {
     const host = "0.0.0.0";
 
     await server.register(cors, {});
-    // Todo: Enregistrer Swagger uniquement en développement
-    // Todo: Register Swagger-ui uniquement en développement
+
+    await server.register(swagger, {
+      openapi: {
+        openapi: "3.0.0",
+        info: {
+          title: "EatIt API",
+          description: "API REST pour la plateforme de livraison EatIt",
+          version: "1.0.0",
+        },
+        servers: [{ url: "http://localhost:3000" }],
+        components: {
+          securitySchemes: {
+            bearerAuth: {
+              type: "http",
+              scheme: "bearer",
+              bearerFormat: "JWT",
+            },
+          },
+        },
+        security: [{ bearerAuth: [] }],
+      },
+    });
+
+    await server.register(swaggerUi, {
+      routePrefix: "/docs",
+      uiConfig: {
+        docExpansion: "list",
+        deepLinking: true,
+      },
+    });
+
     await registerPlugins(server);
     await registerGraphQL(server);
     await registerRoutes(server);
 
     await server.ready();
-    if (process.env.NODE_ENV === "development") {
-      //server.swagger();
-    }
 
     await server.listen({ port, host });
     server.log.info(`Server running on http://${host}:${port}`);

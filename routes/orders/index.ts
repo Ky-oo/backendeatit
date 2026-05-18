@@ -18,6 +18,7 @@ export const ordersRoutes = async (app: FastifyInstance) => {
     "/mine",
     {
       schema: {
+        description: "Get all orders of the authenticated user",
         response: {
           200: GetOrdersResponseSchema,
           401: ErrorResponseSchema,
@@ -35,6 +36,8 @@ export const ordersRoutes = async (app: FastifyInstance) => {
     "/restaurant",
     {
       schema: {
+        description:
+          "Get all orders for restaurants owned by the authenticated user",
         response: {
           200: GetOrdersResponseSchema,
           401: ErrorResponseSchema,
@@ -55,9 +58,11 @@ export const ordersRoutes = async (app: FastifyInstance) => {
     "/",
     {
       schema: {
+        description: "Create a new order",
         body: CreateOrderSchema,
         response: {
           201: CreateOrderResponseSchema,
+          400: ErrorResponseSchema,
           401: ErrorResponseSchema,
           404: ErrorResponseSchema,
         },
@@ -81,9 +86,12 @@ export const ordersRoutes = async (app: FastifyInstance) => {
     "/:id",
     {
       schema: {
+        description: "Update order status",
+        params: Type.Object({ id: Type.String({ description: "Order ID" }) }),
         body: UpdateOrderSchema,
         response: {
           200: CreateOrderResponseSchema,
+          400: ErrorResponseSchema,
           401: ErrorResponseSchema,
           403: ErrorResponseSchema,
           404: ErrorResponseSchema,
@@ -111,6 +119,8 @@ export const ordersRoutes = async (app: FastifyInstance) => {
     "/:id",
     {
       schema: {
+        description: "Delete an order",
+        params: Type.Object({ id: Type.String({ description: "Order ID" }) }),
         response: {
           204: Type.Null(),
           401: ErrorResponseSchema,

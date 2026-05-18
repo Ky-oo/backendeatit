@@ -22,9 +22,11 @@ export const dishesRoutes = async (app: FastifyInstance) => {
     "/",
     {
       schema: {
+        description: "Create a new dish for a restaurant (RESTAURANT only)",
         body: CreateDishSchema,
         response: {
           201: CreateDishResponseSchema,
+          400: ErrorResponseSchema,
           401: ErrorResponseSchema,
           403: ErrorResponseSchema,
           404: ErrorResponseSchema,
@@ -45,6 +47,11 @@ export const dishesRoutes = async (app: FastifyInstance) => {
     "/restaurant/:restaurantId",
     {
       schema: {
+        description:
+          "List dishes for a restaurant with optional price filters and pagination",
+        params: Type.Object({
+          restaurantId: Type.String({ description: "Restaurant ID" }),
+        }),
         querystring: DishQuerySchema,
         response: {
           200: PaginatedDishesResponseSchema,
@@ -78,6 +85,8 @@ export const dishesRoutes = async (app: FastifyInstance) => {
     "/:id",
     {
       schema: {
+        description: "Get a dish by ID",
+        params: Type.Object({ id: Type.String({ description: "Dish ID" }) }),
         response: {
           200: CreateDishResponseSchema,
           404: ErrorResponseSchema,
@@ -97,9 +106,12 @@ export const dishesRoutes = async (app: FastifyInstance) => {
     "/:id",
     {
       schema: {
+        description: "Update a dish (owner or ADMIN)",
+        params: Type.Object({ id: Type.String({ description: "Dish ID" }) }),
         body: UpdateDishSchema,
         response: {
           200: UpdateDishResponseSchema,
+          400: ErrorResponseSchema,
           401: ErrorResponseSchema,
           403: ErrorResponseSchema,
           404: ErrorResponseSchema,
@@ -127,6 +139,8 @@ export const dishesRoutes = async (app: FastifyInstance) => {
     "/:id",
     {
       schema: {
+        description: "Delete a dish (owner or ADMIN)",
+        params: Type.Object({ id: Type.String({ description: "Dish ID" }) }),
         response: {
           204: Type.Null(),
           401: ErrorResponseSchema,

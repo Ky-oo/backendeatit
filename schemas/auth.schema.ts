@@ -53,3 +53,10 @@ export type RegisterRequest = Static<typeof RegisterSchema>;
 export type RefreshTokenRequest = Static<typeof RefreshTokenSchema>;
 export type UserResponse = Static<typeof UserResponseSchema>;
 export type TokenResponse = Static<typeof TokenResponseSchema>;
+
+export const AuthMeResponseSchema = Type.Object({
+  id: Type.String({ description: "User ID" }),
+  email: Type.String({ format: "email", description: "User email" }),
+  role: Type.String({ description: "User role: USER, RESTAURANT or ADMIN" }),
+});
+export type AuthMeResponse = Static<typeof AuthMeResponseSchema>;

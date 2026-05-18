@@ -7,12 +7,12 @@ import {
   RegisterSchema,
   TokenResponseSchema,
   UserResponseSchema,
+  AuthMeResponseSchema,
   type LoginRequest,
   type RefreshTokenRequest,
   type RegisterRequest,
 } from "../../schemas/auth.schema.js";
 import { ErrorResponseSchema } from "../../schemas/error.schema.js";
-import { User } from "../../generated/prisma/client.js";
 
 export const authRoutes = async (app: FastifyInstance) => {
   const authService = new AuthService(app.prisma);
@@ -20,9 +20,11 @@ export const authRoutes = async (app: FastifyInstance) => {
     "/register",
     {
       schema: {
+        description: "Register a new user account",
         body: RegisterSchema,
         response: {
           201: UserResponseSchema,
+          400: ErrorResponseSchema,
           409: ErrorResponseSchema,
         },
       },
@@ -40,9 +42,11 @@ export const authRoutes = async (app: FastifyInstance) => {
     "/login",
     {
       schema: {
+        description: "Login and receive JWT access + refresh tokens",
         body: LoginSchema,
         response: {
           200: TokenResponseSchema,
+          400: ErrorResponseSchema,
           401: ErrorResponseSchema,
         },
       },
@@ -64,9 +68,11 @@ export const authRoutes = async (app: FastifyInstance) => {
     "/refresh",
     {
       schema: {
+        description: "Rotate refresh token and get a new access token",
         body: RefreshTokenSchema,
         response: {
           200: TokenResponseSchema,
+          400: ErrorResponseSchema,
           401: ErrorResponseSchema,
         },
       },
@@ -90,8 +96,9 @@ export const authRoutes = async (app: FastifyInstance) => {
     "/me",
     {
       schema: {
+        description: "Get the currently authenticated user (from JWT)",
         response: {
-          200: Type.Unsafe<Omit<User, "password">>(),
+          200: AuthMeResponseSchema,
           401: ErrorResponseSchema,
         },
       },
