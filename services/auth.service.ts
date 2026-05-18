@@ -198,3 +198,9 @@ export const register = (prisma: PrismaClient, input: RegisterInput) =>
 
 export const login = (prisma: PrismaClient, input: LoginInput) =>
   new AuthService(prisma).login(input);
+
+export const createRefreshToken = (prisma: PrismaClient, userId: string) =>
+  new AuthService(prisma).createRefreshToken(userId);
+
+export const rotateRefreshToken = (prisma: PrismaClient, refreshToken: string) =>
+  new AuthService(prisma).rotateRefreshToken(refreshToken);

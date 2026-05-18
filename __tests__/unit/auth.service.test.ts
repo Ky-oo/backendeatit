@@ -1,7 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { register, login } from "../../services/auth.service.js";
+import {
+  register,
+  login,
+  createRefreshToken,
+  rotateRefreshToken,
+} from "../../services/auth.service.js";
 import { ConflictError, UnauthorizedError } from "../../common/exceptions.js";
 import { hash } from "bcryptjs";
+import { randomBytes } from "crypto";
 
 describe("Auth Service - Unit Tests", () => {
   let prisma: any;
@@ -15,6 +21,11 @@ describe("Auth Service - Unit Tests", () => {
       user: {
         findUnique: vi.fn(),
         create: vi.fn(),
+      },
+      refreshToken: {
+        create: vi.fn(),
+        findMany: vi.fn(),
+        update: vi.fn(),
       },
     };
   });
@@ -147,6 +158,91 @@ describe("Auth Service - Unit Tests", () => {
 
       // TODO : Vérifier que login() lance une UnauthorizedError
       await expect(login(prisma, input)).rejects.toThrow(UnauthorizedError);
+    });
+  });
+
+  describe("createRefreshToken", () => {
+    it("devrait créer un refresh token et le persister en base", async () => {
+      prisma.refreshToken.create.mockResolvedValue({ id: "token-1" });
+
+      const result = await createRefreshToken(prisma, "user-123");
+
+      expect(typeof result).toBe("string");
+      expect(result.length).toBeGreaterThan(0);
+      expect(prisma.refreshToken.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            userId: "user-123",
+            tokenHash: expect.any(String),
+            expiresAt: expect.any(Date),
+          }),
+        }),
+      );
+    });
+
+    it("devrait stocker un hash (pas le token brut) en base", async () => {
+      prisma.refreshToken.create.mockResolvedValue({ id: "token-1" });
+
+      const token = await createRefreshToken(prisma, "user-123");
+      const storedHash =
+        prisma.refreshToken.create.mock.calls[0][0].data.tokenHash;
+
+      // Le hash doit être différent du token brut
+      expect(storedHash).not.toBe(token);
+      // Le hash doit commencer par $2b$ (bcrypt)
+      expect(storedHash).toMatch(/^\$2[ab]\$/);
+    });
+  });
+
+  describe("rotateRefreshToken", () => {
+    it("devrait retourner un nouveau token si le refresh token est valide", async () => {
+      const plainToken = randomBytes(48).toString("base64url");
+      const tokenHash = await hash(plainToken, 10);
+
+      prisma.refreshToken.findMany.mockResolvedValue([
+        {
+          id: "token-1",
+          userId: "user-123",
+          tokenHash,
+          user: {
+            id: "user-123",
+            email: "user@example.com",
+            role: "USER",
+            firstname: "John",
+            lastname: "Doe",
+            city: "Paris",
+            cp: "75001",
+            address: "1 rue de la Paix",
+            picture: null,
+            phoneNumber: null,
+            details: null,
+          },
+        },
+      ]);
+      prisma.refreshToken.update.mockResolvedValue({});
+      prisma.refreshToken.create.mockResolvedValue({ id: "token-2" });
+
+      const result = await rotateRefreshToken(prisma, plainToken);
+
+      expect(result.id).toBe("user-123");
+      expect(result.email).toBe("user@example.com");
+      expect(typeof result.refreshToken).toBe("string");
+      // L'ancien token doit être révoqué
+      expect(prisma.refreshToken.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { revokedAt: expect.any(Date) },
+        }),
+      );
+      // Un nouveau token doit être créé
+      expect(prisma.refreshToken.create).toHaveBeenCalled();
+    });
+
+    it("devrait lancer une UnauthorizedError si le refresh token est invalide", async () => {
+      prisma.refreshToken.findMany.mockResolvedValue([]);
+
+      await expect(rotateRefreshToken(prisma, "invalid-token")).rejects.toThrow(
+        UnauthorizedError,
+      );
     });
   });
 });
