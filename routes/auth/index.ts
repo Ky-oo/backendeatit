@@ -19,6 +19,12 @@ export const authRoutes = async (app: FastifyInstance) => {
   app.post<{ Body: RegisterRequest }>(
     "/register",
     {
+      config: {
+        rateLimit: {
+          max: 10,
+          timeWindow: "1 minute",
+        },
+      },
       schema: {
         description: "Register a new user account",
         body: RegisterSchema,
@@ -41,6 +47,12 @@ export const authRoutes = async (app: FastifyInstance) => {
   app.post<{ Body: LoginRequest }>(
     "/login",
     {
+      config: {
+        rateLimit: {
+          max: 10,
+          timeWindow: "1 minute",
+        },
+      },
       schema: {
         description: "Login and receive JWT access + refresh tokens",
         body: LoginSchema,

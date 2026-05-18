@@ -1,5 +1,6 @@
 import fastify, { FastifyError, FastifyReply, FastifyRequest } from "fastify";
 import cors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
 import "./plugins/dotenvx.js";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
@@ -70,6 +71,17 @@ const start = async () => {
     const host = "0.0.0.0";
 
     await server.register(cors, {});
+
+    await server.register(rateLimit, {
+      global: true,
+      max: 100,
+      timeWindow: "1 minute",
+      errorResponseBuilder: (_request, context) => ({
+        statusCode: 429,
+        error: "Too Many Requests",
+        message: `Rate limit exceeded, retry in ${context.after}`,
+      }),
+    });
 
     await server.register(swagger, {
       openapi: {
