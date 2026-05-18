@@ -10,6 +10,14 @@ export const CreateOrderSchema = Type.Object({
   items: Type.Array(OrderItemInputSchema, { minItems: 1 }),
 });
 
+export const UpdateOrderSchema = Type.Object({
+  status: Type.Union([
+    Type.Literal("EN_COURS"),
+    Type.Literal("LIVREE"),
+    Type.Literal("ANNULEE"),
+  ]),
+});
+
 export const OrderItemSchema = Type.Object({
   id: Type.String(),
   dishId: Type.String(),
@@ -31,5 +39,10 @@ export const CreateOrderResponseSchema = Type.Object({
   order: OrderSchema,
 });
 
+export const GetOrdersResponseSchema = Type.Object({
+  orders: Type.Array(OrderSchema),
+});
+
 export type CreateOrderRequest = Static<typeof CreateOrderSchema>;
+export type UpdateOrderRequest = Static<typeof UpdateOrderSchema>;
 export type OrderItemInput = Static<typeof OrderItemInputSchema>;

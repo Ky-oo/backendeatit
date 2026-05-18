@@ -10,6 +10,9 @@ import {
   UpdateDishResponseSchema,
   type UpdateDishRequest,
   DishListResponseSchema,
+  DishQuerySchema,
+  PaginatedDishesResponseSchema,
+  type DishQuery,
 } from "../../schemas/dishes.schema.js";
 
 export const dishesRoutes = async (app: FastifyInstance) => {
@@ -33,30 +36,39 @@ export const dishesRoutes = async (app: FastifyInstance) => {
       request: FastifyRequest<{ Body: CreateDishRequest }>,
       reply: FastifyReply,
     ) => {
-      const result = await dishService.createDish(
-        request.body,
-        request.user.id,
-      );
+      const result = await dishService.createDish(request.body, request.user);
       return reply.status(201).send(result);
     },
   );
 
-  app.get<{ Params: { restaurantId: string } }>(
+  app.get<{ Params: { restaurantId: string }; Querystring: DishQuery }>(
     "/restaurant/:restaurantId",
     {
       schema: {
+        querystring: DishQuerySchema,
         response: {
-          200: DishListResponseSchema,
+          200: PaginatedDishesResponseSchema,
           404: ErrorResponseSchema,
         },
       },
     },
     async (
-      request: FastifyRequest<{ Params: { restaurantId: string } }>,
+      request: FastifyRequest<{
+        Params: { restaurantId: string };
+        Querystring: DishQuery;
+      }>,
       reply: FastifyReply,
     ) => {
+      const limit = request.query.limit ?? 20;
+      const offset = request.query.offset ?? 0;
       const result = await dishService.getDishesByRestaurant(
         request.params.restaurantId,
+        {
+          limit,
+          offset,
+          minPrice: request.query.minPrice,
+          maxPrice: request.query.maxPrice,
+        },
       );
       return reply.status(200).send(result);
     },
@@ -105,7 +117,7 @@ export const dishesRoutes = async (app: FastifyInstance) => {
       const result = await dishService.updateDish(
         request.params.id,
         request.body,
-        request.user.id,
+        request.user,
       );
       return reply.status(200).send(result);
     },
@@ -128,7 +140,7 @@ export const dishesRoutes = async (app: FastifyInstance) => {
       request: FastifyRequest<{ Params: { id: string } }>,
       reply: FastifyReply,
     ) => {
-      await dishService.deleteDish(request.params.id, request.user.id);
+      await dishService.deleteDish(request.params.id, request.user);
       return reply.status(204).send();
     },
   );

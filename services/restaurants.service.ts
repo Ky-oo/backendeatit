@@ -1,5 +1,9 @@
 import type { PrismaClient, User } from "../generated/prisma/client.js";
-import { ConflictError, UnauthorizedError } from "../common/exceptions.js";
+import {
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+} from "../common/exceptions.js";
 import { Restaurant } from "../generated/prisma/client.js";
 
 type CreateRestaurantInput = {
@@ -16,6 +20,12 @@ type CreateRestaurantInput = {
 
 type CreateRestaurantResponse = {
   restaurant: Restaurant;
+};
+
+type GetAllRestaurantsInput = {
+  limit: number;
+  offset: number;
+  cuisine?: string;
 };
 
 type GetAllRestaurantResponse = {
@@ -74,14 +84,30 @@ export default class RestaurantService {
         name: newRestaurant.name,
         rating: newRestaurant.rating,
         userId: newRestaurant.userId,
+        createdAt: newRestaurant.createdAt,
+        updatedAt: newRestaurant.updatedAt,
       },
     };
   };
 
-  getAllRestaurants = async (): Promise<GetAllRestaurantResponse> => {
-    const restaurants = await this.prisma.restaurant.findMany();
+  getAllRestaurants = async (
+    input: GetAllRestaurantsInput,
+  ): Promise<{
+    data: Restaurant[];
+    pagination: { total: number; limit: number; offset: number };
+  }> => {
+    const where = input.cuisine ? { cuisine: input.cuisine } : {};
+    const [restaurants, total] = await this.prisma.$transaction([
+      this.prisma.restaurant.findMany({
+        where,
+        skip: input.offset,
+        take: input.limit,
+      }),
+      this.prisma.restaurant.count({ where }),
+    ]);
     return {
-      restaurants,
+      data: restaurants,
+      pagination: { total, limit: input.limit, offset: input.offset },
     };
   };
 
@@ -123,18 +149,24 @@ export default class RestaurantService {
       },
     });
     if (!restaurant) {
-      throw new UnauthorizedError("Restaurant not found");
+      throw new NotFoundError("Restaurant not found");
     }
     if (restaurant.userId !== userId && user.role !== "ADMIN") {
-      throw new UnauthorizedError(
+      throw new ForbiddenError(
         "You are not authorized to update this restaurant",
       );
     }
+    const data = { ...updateData };
+
+    if (user.role !== "ADMIN") {
+      delete data.userId;
+    }
+
     const updatedRestaurant = await this.prisma.restaurant.update({
       where: {
         id,
       },
-      data: updateData,
+      data,
     });
     return updatedRestaurant;
   };

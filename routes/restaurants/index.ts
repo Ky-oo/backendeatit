@@ -9,22 +9,55 @@ import {
   UpdateRestaurantResponseSchema,
   getAllResturantsResponseSchema,
   type UpdateRestaurantRequest,
+  RestaurantQuerySchema,
+  PaginatedRestaurantsResponseSchema,
+  type RestaurantQuery,
 } from "../../schemas/restaurants.schema.js";
 
 export const RestaurantsRoutes = async (app: FastifyInstance) => {
   const restaurantService = new RestaurantService(app.prisma);
 
-  app.get(
+  app.get<{ Querystring: RestaurantQuery }>(
     "/",
+    {
+      schema: {
+        querystring: RestaurantQuerySchema,
+        response: {
+          200: PaginatedRestaurantsResponseSchema,
+        },
+      },
+    },
+    async (
+      request: FastifyRequest<{ Querystring: RestaurantQuery }>,
+      reply: FastifyReply,
+    ) => {
+      const limit = request.query.limit ?? 20;
+      const offset = request.query.offset ?? 0;
+      const restaurants = await restaurantService.getAllRestaurants({
+        limit,
+        offset,
+        cuisine: request.query.cuisine,
+      });
+      return reply.status(200).send(restaurants);
+    },
+  );
+
+  app.get<{ Params: { id: string } }>(
+    "/mine",
     {
       schema: {
         response: {
           200: getAllResturantsResponseSchema,
+          401: ErrorResponseSchema,
+          403: ErrorResponseSchema,
         },
       },
+      onRequest: [app.authorize(["RESTAURANT"])],
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const restaurants = await restaurantService.getAllRestaurants();
+      const restaurants = await restaurantService.getMyRestaurants(
+        request.user.id,
+      );
       return reply.status(200).send(restaurants);
     },
   );
@@ -46,7 +79,7 @@ export const RestaurantsRoutes = async (app: FastifyInstance) => {
       const restaurant = await restaurantService.getRestaurantById(
         request.params.id,
       );
-      if (!restaurant) {
+      if (!restaurant.restaurant) {
         return reply.status(404).send({ error: "Restaurant not found" });
       }
       return reply.status(200).send(restaurant);

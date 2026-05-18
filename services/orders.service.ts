@@ -1,5 +1,5 @@
 import type { PrismaClient } from "../generated/prisma/client.js";
-import { NotFoundError } from "../common/exceptions.js";
+import { ForbiddenError, NotFoundError } from "../common/exceptions.js";
 import { notifyRestaurant } from "./websocket.service.js";
 import type { OrderItemInput } from "../schemas/orders.schema.js";
 
@@ -7,6 +7,15 @@ type CreateOrderInput = {
   userId: string;
   restaurantId: string;
   items: OrderItemInput[];
+};
+
+type Actor = {
+  id: string;
+  role: string;
+};
+
+type UpdateOrderInput = {
+  status: "EN_COURS" | "LIVREE" | "ANNULEE";
 };
 
 export default class OrderService {
@@ -26,9 +35,8 @@ export default class OrderService {
 
     const dishIds = input.items.map((i) => i.dishId);
     const dishes = await this.prisma.dish.findMany({
-      where: { id: { in: dishIds } },
+      where: { id: { in: dishIds }, restaurantId: input.restaurantId },
     });
-    console.log(dishes);
 
     if (dishes.length !== dishIds.length) {
       throw new NotFoundError("One or more dishes not found");
@@ -69,5 +77,95 @@ export default class OrderService {
     });
 
     return { order };
+  };
+
+  getUserOrders = async (userId: string) => {
+    const orders = await this.prisma.order.findMany({
+      where: { userId },
+      include: { items: true },
+      orderBy: { date: "desc" },
+    });
+
+    return { orders };
+  };
+
+  getRestaurantOwnerOrders = async (ownerId: string) => {
+    const orders = await this.prisma.order.findMany({
+      where: {
+        restaurant: {
+          userId: ownerId,
+        },
+      },
+      include: { items: true },
+      orderBy: { date: "desc" },
+    });
+
+    return { orders };
+  };
+
+  updateOrder = async (
+    id: string,
+    input: UpdateOrderInput,
+    actor: Actor,
+  ) => {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: {
+        restaurant: true,
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundError("Order not found");
+    }
+
+    this.assertOrderOwner(order, actor);
+
+    const updated = await this.prisma.order.update({
+      where: { id },
+      data: {
+        status: input.status,
+      },
+      include: { items: true },
+    });
+
+    return { order: updated };
+  };
+
+  deleteOrder = async (id: string, actor: Actor): Promise<void> => {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: {
+        restaurant: true,
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundError("Order not found");
+    }
+
+    this.assertOrderOwner(order, actor);
+
+    await this.prisma.order.delete({
+      where: { id },
+    });
+  };
+
+  private assertOrderOwner = (
+    order: {
+      userId: string;
+      restaurant: {
+        userId: string;
+      };
+    },
+    actor: Actor,
+  ) => {
+    const isCustomerOwner = order.userId === actor.id;
+    const isRestaurantOwner = order.restaurant.userId === actor.id;
+    const isAdmin = actor.role === "ADMIN";
+
+    if (!isCustomerOwner && !isRestaurantOwner && !isAdmin) {
+      throw new ForbiddenError("You are not the owner of this order");
+    }
   };
 }

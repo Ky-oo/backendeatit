@@ -1,5 +1,6 @@
 import type { PrismaClient } from "../generated/prisma/client.js";
 import { hash, compare } from "bcryptjs";
+import { randomBytes } from "crypto";
 import { ConflictError, UnauthorizedError } from "../common/exceptions.js";
 
 export interface LoginInput {
@@ -36,6 +37,8 @@ export interface AuthResponse {
 
 export default class AuthService {
   private prisma: PrismaClient;
+  private refreshTokenTtlDays = 30;
+
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
   }
@@ -88,6 +91,7 @@ export default class AuthService {
         email: input.email,
       },
     });
+    console.log("New access token generated for user:", user);
 
     if (!user) {
       throw new UnauthorizedError("Invalid email or password");
@@ -112,6 +116,79 @@ export default class AuthService {
       address: user.address,
       details: user.details ?? undefined,
     };
+  };
+
+  createRefreshToken = async (userId: string): Promise<string> => {
+    const refreshToken = randomBytes(48).toString("base64url");
+    const tokenHash = await hash(refreshToken, 10);
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + this.refreshTokenTtlDays);
+
+    await this.prisma.refreshToken.create({
+      data: {
+        userId,
+        tokenHash,
+        expiresAt,
+      },
+    });
+
+    return refreshToken;
+  };
+
+  rotateRefreshToken = async (
+    refreshToken: string,
+  ): Promise<
+    AuthResponse & {
+      refreshToken: string;
+    }
+  > => {
+    const storedTokens = await this.prisma.refreshToken.findMany({
+      where: {
+        revokedAt: null,
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    for (const storedToken of storedTokens) {
+      const isValid = await compare(refreshToken, storedToken.tokenHash);
+
+      if (!isValid) {
+        continue;
+      }
+
+      await this.prisma.refreshToken.update({
+        where: {
+          id: storedToken.id,
+        },
+        data: {
+          revokedAt: new Date(),
+        },
+      });
+
+      const newRefreshToken = await this.createRefreshToken(storedToken.userId);
+
+      return {
+        id: storedToken.user.id,
+        email: storedToken.user.email,
+        role: storedToken.user.role,
+        firstname: storedToken.user.firstname,
+        lastname: storedToken.user.lastname,
+        picture: storedToken.user.picture ?? undefined,
+        phoneNumber: storedToken.user.phoneNumber ?? undefined,
+        city: storedToken.user.city,
+        cp: storedToken.user.cp,
+        address: storedToken.user.address,
+        details: storedToken.user.details ?? undefined,
+        refreshToken: newRefreshToken,
+      };
+    }
+
+    throw new UnauthorizedError("Invalid refresh token");
   };
 }
 

@@ -7,6 +7,5 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL is required to initialize Prisma");
 }
 
-const adapterUrl = databaseUrl.trim().replace(/^mysql:\/\//, "mariadb://");
-const adapter = new PrismaMariaDb(adapterUrl);
+const adapter = new PrismaMariaDb(databaseUrl);
 export const prisma = new PrismaClient({ adapter });

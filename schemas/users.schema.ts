@@ -17,6 +17,7 @@ export const UserProfileSchema = Type.Object({
 export const UpdateUserSchema = Type.Partial(
   Type.Object({
     email: Type.String({ format: "email" }),
+    password: Type.String({ minLength: 6 }),
     firstname: Type.String({ minLength: 1 }),
     lastname: Type.String({ minLength: 1 }),
     picture: Type.String(),

@@ -18,6 +18,12 @@ export default fp(async function (fastify: FastifyInstance, options = {}) {
     "authenticate",
     async (req: FastifyRequest, res: FastifyReply) => {
       try {
+        const authorization = req.headers.authorization;
+
+        if (!authorization?.startsWith("Bearer ")) {
+          throw new UnauthorizedError("Missing or invalid Authorization header");
+        }
+
         const payload = await req.jwtVerify<{
           id: string;
         }>();

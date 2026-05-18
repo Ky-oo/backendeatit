@@ -10,6 +10,16 @@ type CreateDishInput = {
 };
 
 type UpdateDishInput = Partial<Omit<CreateDishInput, "restaurantId">>;
+type GetDishesInput = {
+  limit: number;
+  offset: number;
+  minPrice?: number;
+  maxPrice?: number;
+};
+type Actor = {
+  id: string;
+  role: string;
+};
 
 export default class DishService {
   private prisma: PrismaClient;
@@ -20,7 +30,7 @@ export default class DishService {
 
   createDish = async (
     input: CreateDishInput,
-    userId: string,
+    actor: Actor,
   ): Promise<{ dish: Dish }> => {
     const restaurant = await this.prisma.restaurant.findUnique({
       where: { id: input.restaurantId },
@@ -30,7 +40,7 @@ export default class DishService {
       throw new NotFoundError("Restaurant not found");
     }
 
-    if (restaurant.userId !== userId) {
+    if (restaurant.userId !== actor.id && actor.role !== "ADMIN") {
       throw new ForbiddenError("You are not the owner of this restaurant");
     }
 
@@ -49,7 +59,11 @@ export default class DishService {
 
   getDishesByRestaurant = async (
     restaurantId: string,
-  ): Promise<{ dishes: Dish[] }> => {
+    input: GetDishesInput,
+  ): Promise<{
+    data: Dish[];
+    pagination: { total: number; limit: number; offset: number };
+  }> => {
     const restaurant = await this.prisma.restaurant.findUnique({
       where: { id: restaurantId },
     });
@@ -58,11 +72,29 @@ export default class DishService {
       throw new NotFoundError("Restaurant not found");
     }
 
-    const dishes = await this.prisma.dish.findMany({
-      where: { restaurantId },
-    });
+    const where: {
+      restaurantId: string;
+      price?: { gte?: number; lte?: number };
+    } = { restaurantId };
+    if (input.minPrice !== undefined || input.maxPrice !== undefined) {
+      where.price = {};
+      if (input.minPrice !== undefined) where.price.gte = input.minPrice;
+      if (input.maxPrice !== undefined) where.price.lte = input.maxPrice;
+    }
 
-    return { dishes };
+    const [dishes, total] = await this.prisma.$transaction([
+      this.prisma.dish.findMany({
+        where,
+        skip: input.offset,
+        take: input.limit,
+      }),
+      this.prisma.dish.count({ where }),
+    ]);
+
+    return {
+      data: dishes,
+      pagination: { total, limit: input.limit, offset: input.offset },
+    };
   };
 
   getDishById = async (id: string): Promise<{ dish: Dish }> => {
@@ -80,7 +112,7 @@ export default class DishService {
   updateDish = async (
     id: string,
     updateData: UpdateDishInput,
-    userId: string,
+    actor: Actor,
   ): Promise<{ dish: Dish }> => {
     const dish = await this.prisma.dish.findUnique({
       where: { id },
@@ -91,7 +123,7 @@ export default class DishService {
       throw new NotFoundError("Dish not found");
     }
 
-    if (dish.restaurant.userId !== userId) {
+    if (dish.restaurant.userId !== actor.id && actor.role !== "ADMIN") {
       throw new ForbiddenError("You are not the owner of this restaurant");
     }
 
@@ -103,7 +135,7 @@ export default class DishService {
     return { dish: updated };
   };
 
-  deleteDish = async (id: string, userId: string): Promise<void> => {
+  deleteDish = async (id: string, actor: Actor): Promise<void> => {
     const dish = await this.prisma.dish.findUnique({
       where: { id },
       include: { restaurant: true },
@@ -113,7 +145,7 @@ export default class DishService {
       throw new NotFoundError("Dish not found");
     }
 
-    if (dish.restaurant.userId !== userId) {
+    if (dish.restaurant.userId !== actor.id && actor.role !== "ADMIN") {
       throw new ForbiddenError("You are not the owner of this restaurant");
     }
 

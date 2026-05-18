@@ -24,7 +24,8 @@ export const usersRoutes = async (app: FastifyInstance) => {
       onRequest: [app.authenticate],
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      return reply.status(200).send(request.user);
+      const user = await userService.getProfile(request.user.id);
+      return reply.status(200).send(user);
     },
   );
 
@@ -47,6 +48,7 @@ export const usersRoutes = async (app: FastifyInstance) => {
     ) => {
       const result = await userService.updateUser(
         request.user.id,
+        request.user.id,
         request.body,
       );
       return reply.status(200).send(result);
@@ -65,7 +67,7 @@ export const usersRoutes = async (app: FastifyInstance) => {
       onRequest: [app.authenticate],
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      await userService.deleteUser(request.user.id);
+      await userService.deleteUser(request.user.id, request.user.id);
       return reply.status(204).send();
     },
   );

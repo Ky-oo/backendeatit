@@ -1,9 +1,15 @@
 import type { PrismaClient } from "../generated/prisma/client.js";
-import { ConflictError } from "../common/exceptions.js";
+import { hash } from "bcryptjs";
+import {
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+} from "../common/exceptions.js";
 import type { UserProfile } from "../schemas/users.schema.js";
 
 type UpdateUserInput = {
   email?: string;
+  password?: string;
   firstname?: string;
   lastname?: string;
   picture?: string;
@@ -21,10 +27,35 @@ export default class UserService {
     this.prisma = prisma;
   }
 
+  getProfile = async (id: string): Promise<UserProfile> => {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new NotFoundError("User not found");
+    }
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      firstname: user.firstname,
+      lastname: user.lastname,
+      picture: user.picture ?? undefined,
+      phoneNumber: user.phoneNumber ?? undefined,
+      city: user.city,
+      cp: user.cp,
+      address: user.address,
+      details: user.details ?? undefined,
+    };
+  };
+
   updateUser = async (
     id: string,
+    requesterId: string,
     input: UpdateUserInput,
   ): Promise<{ user: UserProfile }> => {
+    if (id !== requesterId) {
+      throw new ForbiddenError("You can only update your own profile");
+    }
+
     if (input.email) {
       const existing = await this.prisma.user.findUnique({
         where: { email: input.email },
@@ -34,9 +65,15 @@ export default class UserService {
       }
     }
 
+    const { password, ...rest } = input;
+    const data: UpdateUserInput = { ...rest };
+    if (password) {
+      data.password = await hash(password, 10);
+    }
+
     const updated = await this.prisma.user.update({
       where: { id },
-      data: input,
+      data,
     });
 
     return {
@@ -56,7 +93,11 @@ export default class UserService {
     };
   };
 
-  deleteUser = async (id: string): Promise<void> => {
+  deleteUser = async (id: string, requesterId: string): Promise<void> => {
+    if (id !== requesterId) {
+      throw new ForbiddenError("You can only delete your own profile");
+    }
+
     await this.prisma.$transaction(async (tx) => {
       // Récupérer les IDs des restaurants du user
       const restaurants = await tx.restaurant.findMany({

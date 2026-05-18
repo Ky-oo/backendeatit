@@ -30,6 +30,16 @@ server.setErrorHandler((error, request, reply) => {
   }
 
   const validationError = error as FastifyError;
+  if (validationError.code === "FST_ERR_CTP_INVALID_JSON_BODY") {
+    return reply.status(400).send({
+      type: "urn:app:error:invalid-json",
+      title: "Invalid JSON",
+      status: 400,
+      detail: "Request body must be valid JSON",
+      instance: request.url,
+    });
+  }
+
   if (validationError.code === "FST_ERR_VALIDATION") {
     return reply.status(400).send({
       type: "urn:app:error:validation",

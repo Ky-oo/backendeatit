@@ -48,3 +48,23 @@ export type UpdateRestaurantRequest = Static<typeof UpdateRestaurantSchema>;
 export type UpdateRestaurantResponse = Static<
   typeof UpdateRestaurantResponseSchema
 >;
+
+export const RestaurantQuerySchema = Type.Object({
+  limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
+  offset: Type.Optional(Type.Integer({ minimum: 0 })),
+  cuisine: Type.Optional(Type.String()),
+});
+
+export const PaginatedRestaurantsResponseSchema = Type.Object({
+  data: Type.Array(RestaurantSchema),
+  pagination: Type.Object({
+    total: Type.Integer(),
+    limit: Type.Integer(),
+    offset: Type.Integer(),
+  }),
+});
+
+export type RestaurantQuery = Static<typeof RestaurantQuerySchema>;
+export type PaginatedRestaurantsResponse = Static<
+  typeof PaginatedRestaurantsResponseSchema
+>;

@@ -16,10 +16,12 @@ model User {
   password    String
   picture     String?
   phoneNumber String?
-  role       String       @default("USER")
+  role       UserRole     @default(USER)
   createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt @default(now())
   restaurants Restaurant[]
   orders      Order[]
+  refreshTokens RefreshToken[]
   city    String
   cp      String
   address String
@@ -29,7 +31,7 @@ model User {
 model Restaurant {
   id           String       @id @default(uuid())
   userId       String
-  user         User       @relation(fields: [userId], references: [id])
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   name         String      @unique
   description  String
   image        String
@@ -40,39 +42,66 @@ model Restaurant {
   distance     Int
   orders       Order[]
   dishes       Dish[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt @default(now())
 }
 
 model Dish {
   id           String      @id @default(uuid())
   restaurantId String
-  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   name         String
   description  String
   price        Float
   image        String?
   orderItems   OrderItem[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt @default(now())
 }
 
 model Order {
   id           String       @id @default(uuid())
   userId       String
-  user         User        @relation(fields: [userId], references: [id])
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   restaurantId String
   restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
   date         DateTime
   total        Float
   status       OrderStatus @default(EN_COURS)
   items        OrderItem[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt @default(now())
 }
 
 model OrderItem {
   id         String  @id @default(uuid())
   orderId    String
-  order      Order   @relation(fields: [orderId], references: [id])
+  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   dishId     String
   dish       Dish    @relation(fields: [dishId], references: [id])
   quantity   Int
   price      Float
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt @default(now())
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt @default(now()) 
+
+  @@index([userId])
+}
+
+enum UserRole {
+  USER
+  RESTAURANT
+  ADMIN
 }
 
 enum OrderStatus {
@@ -80,4 +109,3 @@ enum OrderStatus {
   LIVREE
   ANNULEE
 }
-
