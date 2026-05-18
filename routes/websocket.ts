@@ -50,11 +50,19 @@ export const websocketRoutes = async (app: FastifyInstance) => {
             });
 
             if (!user) {
+              request.log.warn(
+                { userId: payload.id },
+                "WebSocket auth failed: user not found",
+              );
               socket.close(1008, "User not found");
               return;
             }
 
             if (user.role !== "RESTAURANT") {
+              request.log.warn(
+                { userId: user.id, role: user.role },
+                "WebSocket auth failed: RESTAURANT role required",
+              );
               socket.close(1008, "Forbidden: RESTAURANT role required");
               return;
             }
@@ -63,6 +71,10 @@ export const websocketRoutes = async (app: FastifyInstance) => {
               where: { userId: user.id },
             });
             if (!restaurant) {
+              request.log.warn(
+                { userId: user.id },
+                "WebSocket auth failed: no restaurant linked",
+              );
               socket.close(1008, "No restaurant linked to this account");
               return;
             }
@@ -81,6 +93,7 @@ export const websocketRoutes = async (app: FastifyInstance) => {
               }),
             );
           } catch (err) {
+            request.log.warn({ err }, "WebSocket auth failed: invalid token");
             socket.close(1008, "Invalid token");
           }
           return;
