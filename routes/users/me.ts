@@ -24,8 +24,7 @@ export const usersRoutes = async (app: FastifyInstance) => {
       onRequest: [app.authenticate],
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const user = await userService.getProfile(request.user.id);
-      return reply.status(200).send(user);
+      return reply.status(200).send(request.user);
     },
   );
 
