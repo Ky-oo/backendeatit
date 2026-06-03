@@ -23,6 +23,12 @@ type UpdateOrderInput = {
   status: "CONFIRMED" | "PREPARING" | "READY" | "DELIVERED";
 };
 
+type GetOrdersInput = {
+  limit: number;
+  offset: number;
+  status?: OrderStatus;
+};
+
 const orderInclude = {
   items: {
     include: {
@@ -99,20 +105,40 @@ export default class OrderService {
       include: orderInclude,
     });
 
-    notifyRestaurant(input.restaurantId, "new-order", order);
+    notifyRestaurant(input.restaurantId, "new-order", {
+      orderId: order.id,
+      totalPrice: order.total,
+      itemCount: order.items.length,
+      createdAt: order.createdAt,
+    });
     notifyUser(input.userId, "order-created", order);
 
     return { data: order };
   };
 
-  getUserOrders = async (userId: string) => {
-    const orders = await this.prisma.order.findMany({
-      where: { userId },
-      include: orderInclude,
-      orderBy: { date: "desc" },
-    });
+  getUserOrders = async (userId: string, input?: GetOrdersInput) => {
+    const limit = input?.limit ?? 20;
+    const offset = input?.offset ?? 0;
+    const where = {
+      userId,
+      ...(input?.status ? { status: input.status } : {}),
+    };
 
-    return { data: orders };
+    const [orders, total] = await this.prisma.$transaction([
+      this.prisma.order.findMany({
+        where,
+        include: orderInclude,
+        orderBy: { date: "desc" },
+        skip: offset,
+        take: limit,
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+
+    return {
+      data: orders,
+      pagination: { total, limit, offset },
+    };
   };
 
   getOrderById = async (id: string, actor: Actor) => {

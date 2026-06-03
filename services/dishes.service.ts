@@ -57,6 +57,37 @@ export default class DishService {
     return { data: dish };
   };
 
+  getAllDishes = async (
+    input: GetDishesInput,
+  ): Promise<{
+    data: Dish[];
+    pagination: { total: number; limit: number; offset: number };
+  }> => {
+    const where: {
+      price?: { gte?: number; lte?: number };
+    } = {};
+
+    if (input.minPrice !== undefined || input.maxPrice !== undefined) {
+      where.price = {};
+      if (input.minPrice !== undefined) where.price.gte = input.minPrice;
+      if (input.maxPrice !== undefined) where.price.lte = input.maxPrice;
+    }
+
+    const [dishes, total] = await this.prisma.$transaction([
+      this.prisma.dish.findMany({
+        where,
+        skip: input.offset,
+        take: input.limit,
+      }),
+      this.prisma.dish.count({ where }),
+    ]);
+
+    return {
+      data: dishes,
+      pagination: { total, limit: input.limit, offset: input.offset },
+    };
+  };
+
   getDishesByRestaurant = async (
     restaurantId: string,
     input: GetDishesInput,

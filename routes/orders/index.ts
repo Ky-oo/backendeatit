@@ -5,8 +5,11 @@ import {
   CreateOrderSchema,
   CreateOrderResponseSchema,
   GetOrdersResponseSchema,
+  OrderQuerySchema,
+  PaginatedOrdersResponseSchema,
   UpdateOrderSchema,
   type CreateOrderRequest,
+  type OrderQuery,
   type UpdateOrderRequest,
 } from "../../schemas/orders.schema.js";
 import { Type } from "@sinclair/typebox";
@@ -14,20 +17,29 @@ import { Type } from "@sinclair/typebox";
 export const ordersRoutes = async (app: FastifyInstance) => {
   const orderService = new OrderService(app.prisma);
 
-  app.get(
+  app.get<{ Querystring: OrderQuery }>(
     "/mine",
     {
       schema: {
-        description: "Get all orders of the authenticated user",
+        description:
+          "Get all orders of the authenticated user with pagination and optional status filter",
+        querystring: OrderQuerySchema,
         response: {
-          200: GetOrdersResponseSchema,
+          200: PaginatedOrdersResponseSchema,
           401: ErrorResponseSchema,
         },
       },
       onRequest: [app.authorize(["USER"])],
     },
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const result = await orderService.getUserOrders(request.user.id);
+    async (
+      request: FastifyRequest<{ Querystring: OrderQuery }>,
+      reply: FastifyReply,
+    ) => {
+      const result = await orderService.getUserOrders(request.user.id, {
+        limit: request.query.limit ?? 20,
+        offset: request.query.offset ?? 0,
+        status: request.query.status,
+      });
       return reply.status(200).send(result);
     },
   );

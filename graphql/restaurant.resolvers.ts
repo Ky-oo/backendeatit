@@ -3,6 +3,8 @@ import type { FastifyInstance } from "fastify";
 import { NotFoundError, UnauthorizedError } from "../common/exceptions.js";
 import DishService from "../services/dishes.service.js";
 import OrderService from "../services/orders.service.js";
+import RestaurantService from "../services/restaurants.service.js";
+import UserService from "../services/users.service.js";
 
 declare module "mercurius" {
   interface MercuriusContext {
@@ -12,71 +14,83 @@ declare module "mercurius" {
 
 export const createRestaurantResolvers = (
   app: FastifyInstance,
-): IResolvers => ({
-  Query: {
-    restaurants: async () => {
-      const restaurants = await app.prisma.restaurant.findMany();
-      return restaurants;
+): IResolvers => {
+  const dishService = new DishService(app.prisma);
+  const orderService = new OrderService(app.prisma);
+  const restaurantService = new RestaurantService(app.prisma);
+  const userService = new UserService(app.prisma);
+
+  return {
+    Query: {
+      restaurants: async () => {
+        const { data } = await restaurantService.getAllRestaurants({
+          limit: 100,
+          offset: 0,
+        });
+        return data;
+      },
+
+      restaurant: async (_parent, { id }: { id: string }) => {
+        const { data } = await restaurantService.getRestaurantById(id);
+        if (!data) {
+          throw new NotFoundError(`Restaurant ${id} not found`);
+        }
+        return data;
+      },
+
+      restaurantDishes: async (
+        _parent,
+        { restaurantId }: { restaurantId: string },
+      ) => {
+        const { data } = await dishService.getDishesByRestaurant(restaurantId, {
+          limit: 100,
+          offset: 0,
+        });
+        return data;
+      },
+
+      dishes: async () => {
+        const { data } = await dishService.getAllDishes({
+          limit: 100,
+          offset: 0,
+        });
+        return data;
+      },
+
+      orders: async (_parent, _args, context) => {
+        const userId = context.auth?.id;
+        if (!userId) {
+          throw new UnauthorizedError("Authentication required");
+        }
+        const { data } = await orderService.getUserOrders(userId, {
+          limit: 100,
+          offset: 0,
+        });
+        return data;
+      },
+
+      me: async (_parent, _args, context) => {
+        const userId = context.auth?.id;
+        if (!userId) {
+          throw new UnauthorizedError("Authentication required");
+        }
+        const { data } = await userService.getProfile(userId);
+        return data;
+      },
     },
 
-    restaurant: async (_parent, { id }: { id: string }) => {
-      const restaurant = await app.prisma.restaurant.findUnique({
-        where: { id },
-      });
-      if (!restaurant) {
-        throw new NotFoundError(`Restaurant ${id} not found`);
-      }
-      return restaurant;
+    Restaurant: {
+      dishes: async (parent: { id: string }) => {
+        const { data } = await dishService.getDishesByRestaurant(parent.id, {
+          limit: 100,
+          offset: 0,
+        });
+        return data;
+      },
     },
 
-    restaurantDishes: async (
-      _parent,
-      { restaurantId }: { restaurantId: string },
-    ) => {
-      const restaurant = await app.prisma.restaurant.findUnique({
-        where: { id: restaurantId },
-      });
-      if (!restaurant) {
-        throw new NotFoundError(`Restaurant ${restaurantId} not found`);
-      }
-      return app.prisma.dish.findMany({ where: { restaurantId } });
-    },
-
-    dishes: async () => {
-      return app.prisma.dish.findMany();
-    },
-
-    orders: async (_parent, _args, context) => {
-      const userId = context.auth?.id;
-      if (!userId) {
-        throw new UnauthorizedError("Authentication required");
-      }
-      return app.prisma.order.findMany({
-        where: { userId },
-        include: { items: true },
-        orderBy: { date: "desc" },
-      });
-    },
-
-    me: async (_parent, _args, context) => {
-      const userId = context.auth?.id;
-      if (!userId) {
-        throw new UnauthorizedError("Authentication required");
-      }
-      return app.prisma.user.findUnique({ where: { id: userId } });
-    },
-  },
-
-  Restaurant: {
-    dishes: async (parent: { id: string }) => {
-      return app.prisma.dish.findMany({
-        where: { restaurantId: parent.id },
-      });
-    },
-  },
-
-  Mutation: {
-    createDish: async (
+    Mutation: {
+      createDish: async (
       _parent,
       {
         input,
@@ -98,7 +112,6 @@ export const createRestaurantResolvers = (
         select: { id: true, role: true },
       });
       if (!user) throw new UnauthorizedError("User not found");
-      const dishService = new DishService(app.prisma);
       const { data } = await dishService.createDish(input, user);
       return data;
     },
@@ -126,7 +139,6 @@ export const createRestaurantResolvers = (
         select: { id: true, role: true },
       });
       if (!user) throw new UnauthorizedError("User not found");
-      const dishService = new DishService(app.prisma);
       const { data } = await dishService.updateDish(id, input, user);
       return data;
     },
@@ -145,7 +157,6 @@ export const createRestaurantResolvers = (
     ) => {
       const userId = context.auth?.id;
       if (!userId) throw new UnauthorizedError("Authentication required");
-      const orderService = new OrderService(app.prisma);
       const { data } = await orderService.createOrder({
         userId,
         restaurantId: input.restaurantId,
@@ -175,7 +186,6 @@ export const createRestaurantResolvers = (
       if (!validStatuses.includes(status as (typeof validStatuses)[number])) {
         throw new Error(`Invalid status. Allowed: ${validStatuses.join(", ")}`);
       }
-      const orderService = new OrderService(app.prisma);
       const { data } = await orderService.updateOrder(
         id,
         { status: status as "CONFIRMED" | "PREPARING" | "READY" | "DELIVERED" },
@@ -183,5 +193,6 @@ export const createRestaurantResolvers = (
       );
       return data;
     },
-  },
-});
+    },
+  };
+};

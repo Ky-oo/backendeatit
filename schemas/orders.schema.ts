@@ -25,6 +25,21 @@ export const UpdateOrderSchema = Type.Object({
   ),
 });
 
+export const OrderQuerySchema = Type.Object({
+  limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
+  offset: Type.Optional(Type.Integer({ minimum: 0 })),
+  status: Type.Optional(
+    Type.Union([
+      Type.Literal("PENDING"),
+      Type.Literal("CONFIRMED"),
+      Type.Literal("PREPARING"),
+      Type.Literal("READY"),
+      Type.Literal("DELIVERED"),
+      Type.Literal("CANCELLED"),
+    ]),
+  ),
+});
+
 export const OrderItemSchema = Type.Object({
   id: Type.String(),
   dishId: Type.String(),
@@ -68,8 +83,18 @@ export const GetOrdersResponseSchema = Type.Object({
   data: Type.Array(OrderSchema),
 });
 
+export const PaginatedOrdersResponseSchema = Type.Object({
+  data: Type.Array(OrderSchema),
+  pagination: Type.Object({
+    total: Type.Integer(),
+    limit: Type.Integer(),
+    offset: Type.Integer(),
+  }),
+});
+
 export type CreateOrderRequest = Static<typeof CreateOrderSchema>;
 export type UpdateOrderRequest = Static<typeof UpdateOrderSchema>;
+export type OrderQuery = Static<typeof OrderQuerySchema>;
 export type OrderItemInput = Static<typeof OrderItemInputSchema>;
 
 export type OrderStatus =
