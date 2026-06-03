@@ -135,7 +135,6 @@ export default class RestaurantService {
 
   updateRestaurant = async (
     id: string,
-    userId: string,
     updateData: Partial<CreateRestaurantInput>,
     user: { id: string; role: string },
   ): Promise<Restaurant> => {
@@ -147,7 +146,7 @@ export default class RestaurantService {
     if (!restaurant) {
       throw new NotFoundError("Restaurant not found");
     }
-    if (restaurant.userId !== userId && user.role !== "ADMIN") {
+    if (restaurant.userId !== user.id && user.role !== "ADMIN") {
       throw new ForbiddenError(
         "You are not authorized to update this restaurant",
       );

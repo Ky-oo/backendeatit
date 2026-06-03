@@ -136,7 +136,7 @@ export const RestaurantsRoutes = async (app: FastifyInstance) => {
           404: ErrorResponseSchema,
         },
       },
-      onRequest: [app.authorize(["RESTAURANT"])],
+      onRequest: [app.authorize(["RESTAURANT", "ADMIN"])],
     },
     async (
       request: FastifyRequest<{
@@ -147,7 +147,6 @@ export const RestaurantsRoutes = async (app: FastifyInstance) => {
     ) => {
       const restaurant = await restaurantService.updateRestaurant(
         request.params.id,
-        request.user.id,
         request.body,
         request.user,
       );
