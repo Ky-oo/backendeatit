@@ -114,7 +114,10 @@ export const RestaurantsRoutes = async (app: FastifyInstance) => {
       request: FastifyRequest<{ Body: CreateRestaurantRequest }>,
       reply: FastifyReply,
     ) => {
-      const restaurant = await restaurantService.createRestaurant(request.body);
+      const restaurant = await restaurantService.createRestaurant({
+        ...request.body,
+        userId: request.user.id,
+      });
       return reply.status(201).send(restaurant);
     },
   );

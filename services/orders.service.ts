@@ -255,7 +255,10 @@ export default class OrderService {
       );
     }
 
-    await this.prisma.order.delete({ where: { id } });
+    await this.prisma.order.update({
+      where: { id },
+      data: { status: "CANCELLED" },
+    });
 
     const payload = { orderId: id };
     notifyRestaurant(order.restaurantId, "order-cancelled", payload);

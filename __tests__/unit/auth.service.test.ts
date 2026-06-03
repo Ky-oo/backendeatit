@@ -51,6 +51,14 @@ describe("Auth Service - Unit Tests", () => {
         email: input.email,
         password: expect.any(String), // N'importe quel string (le hash)
         role: "USER",
+        firstname: input.firstname,
+        lastname: input.lastname,
+        picture: null,
+        phoneNumber: null,
+        city: input.city,
+        cp: input.cp,
+        address: input.address,
+        details: null,
       });
 
       //appel de la fonction de register avec les infos user
@@ -58,9 +66,19 @@ describe("Auth Service - Unit Tests", () => {
 
       //verifier le resultat
       expect(result).toEqual({
-        id: "user-123",
-        email: "newuser@example.com",
-        role: "USER",
+        data: {
+          id: "user-123",
+          email: "newuser@example.com",
+          role: "USER",
+          firstname: "Test",
+          lastname: "User",
+          picture: undefined,
+          phoneNumber: undefined,
+          city: "Paris",
+          cp: "75001",
+          address: "1 Rue de Rivoli",
+          details: undefined,
+        },
       });
 
       expect(prisma.user.findUnique).toHaveBeenCalledWith({
@@ -114,6 +132,14 @@ describe("Auth Service - Unit Tests", () => {
         email: "user@example.com",
         password: hashedPassword,
         role: "USER",
+        firstname: "Test",
+        lastname: "User",
+        picture: null,
+        phoneNumber: null,
+        city: "Paris",
+        cp: "75001",
+        address: "1 Rue de Rivoli",
+        details: null,
       });
 
       // ACT
@@ -121,9 +147,19 @@ describe("Auth Service - Unit Tests", () => {
       const result = await login(prisma, input);
       // ASSERT
       expect(result).toEqual({
-        id: "user-456",
-        email: "user@example.com",
-        role: "USER",
+        data: {
+          id: "user-456",
+          email: "user@example.com",
+          role: "USER",
+          firstname: "Test",
+          lastname: "User",
+          picture: undefined,
+          phoneNumber: undefined,
+          city: "Paris",
+          cp: "75001",
+          address: "1 Rue de Rivoli",
+          details: undefined,
+        },
       });
     });
 

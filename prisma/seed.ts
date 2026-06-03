@@ -16,7 +16,13 @@ const adapter = new PrismaMariaDb(adapterUrl);
 const prisma = new PrismaClient({ adapter });
 
 type UserRole = "USER" | "RESTAURANT" | "ADMIN";
-type OrderStatus = "PENDING" | "CONFIRMED" | "PREPARING" | "READY" | "DELIVERED";
+type OrderStatus =
+  | "PENDING"
+  | "CONFIRMED"
+  | "PREPARING"
+  | "READY"
+  | "DELIVERED"
+  | "CANCELLED";
 
 type UserFixture = {
   key: string;

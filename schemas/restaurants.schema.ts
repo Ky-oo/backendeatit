@@ -22,7 +22,6 @@ export const CreateRestaurantSchema = Type.Object({
   image: Type.String({ minLength: 1 }),
   name: Type.String({ minLength: 1 }),
   rating: Type.Number({ minimum: 0, maximum: 5 }),
-  userId: Type.String({ minLength: 1 }),
 });
 
 export const CreateRestaurantResponseSchema = Type.Object({

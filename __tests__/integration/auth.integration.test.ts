@@ -47,9 +47,9 @@ describe("Authentication Integration Tests", () => {
 
       // ASSERT - Vérifier les résultats
       expect(response.statusCode).toBe(201); // 201 = Created
-      expect(response.json()).toHaveProperty("email", newUser.email);
-      expect(response.json()).toHaveProperty("role", "USER");
-      expect(response.json()).not.toHaveProperty("password");
+      expect(response.json().data).toHaveProperty("email", newUser.email);
+      expect(response.json().data).toHaveProperty("role", "USER");
+      expect(response.json().data).not.toHaveProperty("password");
 
       // Vérifier que l'utilisateur est réellement dans la base de données
       const user = await prisma.user.findUnique({
@@ -161,8 +161,9 @@ describe("Authentication Integration Tests", () => {
 
       // 3️⃣ ASSERT
       expect(response.statusCode).toBe(200);
-      expect(response.json()).toHaveProperty("token");
-      const token = response.json().token;
+      expect(response.json().data).toHaveProperty("token");
+      expect(response.json().data).toHaveProperty("refreshToken");
+      const token = response.json().data.token;
       expect(typeof token).toBe("string");
       expect(token).not.toBe("");
     });
@@ -213,7 +214,7 @@ describe("Authentication Integration Tests", () => {
         url: "/api/auth/login",
         payload: { email: "me@example.com", password: "password123" },
       });
-      authToken = loginResponse.json().token;
+      authToken = loginResponse.json().data.token;
     });
 
     it("should return authenticated user profile", async () => {
@@ -224,9 +225,9 @@ describe("Authentication Integration Tests", () => {
       });
 
       expect(response.statusCode).toBe(200);
-      expect(response.json()).toHaveProperty("email", "me@example.com");
-      expect(response.json()).toHaveProperty("role", "USER");
-      expect(response.json()).not.toHaveProperty("password");
+      expect(response.json().data).toHaveProperty("email", "me@example.com");
+      expect(response.json().data).toHaveProperty("role", "USER");
+      expect(response.json().data).not.toHaveProperty("password");
     });
 
     it("should return 401 without token", async () => {

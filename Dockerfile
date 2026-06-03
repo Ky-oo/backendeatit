@@ -1,5 +1,5 @@
 # Stage 1: Builder
-FROM node:22-alpine AS builder
+FROM node:20.19-alpine AS builder
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ RUN npx prisma generate && \
     npm run build
 
 # Stage 2: Runtime
-FROM node:22-alpine AS runtime
+FROM node:20.19-alpine AS runtime
 
 WORKDIR /app
 
@@ -29,7 +29,6 @@ ENV NODE_ENV=production \
 COPY package*.json ./
 COPY prisma.config.ts ./
 COPY prisma ./prisma
-COPY .env ./.env
 COPY start.sh ./start.sh
 
 RUN npm ci --omit=dev && \

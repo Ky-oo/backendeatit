@@ -95,8 +95,6 @@ export default class AuthService {
         email: input.email,
       },
     });
-    console.log("New access token generated for user:", user);
-
     if (!user) {
       throw new UnauthorizedError("Invalid email or password");
     }

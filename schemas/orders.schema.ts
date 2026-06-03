@@ -77,4 +77,5 @@ export type OrderStatus =
   | "CONFIRMED"
   | "PREPARING"
   | "READY"
-  | "DELIVERED";
+  | "DELIVERED"
+  | "CANCELLED";
