@@ -20,8 +20,9 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   JWT_SECRET: ${{ secrets.JWT_SECRET }}
-  DB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
-  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DB_ROOT_PASSWORD: root
+  DATABASE_URL: mysql://root:root@127.0.0.1:3306/eatit_test
+  DATABASE_URL_TEST: mysql://root:root@127.0.0.1:3306/eatit_test
   DOTENV_PRIVATE_KEY: ${{ secrets.DOTENV_PRIVATE_KEY }}
 
 jobs:
@@ -32,11 +33,11 @@ jobs:
       mariadb:
         image: mariadb:11.4
         env:
-          MARIADB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
-          MYSQL_PWD: ${{ secrets.DB_ROOT_PASSWORD }}
+          MARIADB_ROOT_PASSWORD: root
+          MYSQL_PWD: root
           MARIADB_DATABASE: eatit_test
         options: >-
-          --health-cmd="mariadb-admin ping"
+          --health-cmd="mariadb-admin ping -h 127.0.0.1 -uroot -proot"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -60,7 +61,7 @@ jobs:
 
       - name: Wait for MariaDB to be ready
         env:
-          MYSQL_PWD: ${{ secrets.DB_ROOT_PASSWORD }}
+          MYSQL_PWD: root
         run: |
           bash -c 'until mariadb -h 127.0.0.1 -uroot -e "SELECT 1;" --silent; do sleep 2; done'
 
@@ -69,18 +70,12 @@ jobs:
 
       - name: Generate Prisma client
         run: npx prisma generate
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Apply Prisma migrations
         run: npx prisma migrate deploy
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Run tests
         run: npm test
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Prepare Docker image name
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
