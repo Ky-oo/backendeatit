@@ -224,8 +224,8 @@ describe("Auth Service - Unit Tests", () => {
 
       const result = await rotateRefreshToken(prisma, plainToken);
 
-      expect(result.id).toBe("user-123");
-      expect(result.email).toBe("user@example.com");
+      expect(result.data.id).toBe("user-123");
+      expect(result.data.email).toBe("user@example.com");
       expect(typeof result.refreshToken).toBe("string");
       // L'ancien token doit être révoqué
       expect(prisma.refreshToken.update).toHaveBeenCalledWith(

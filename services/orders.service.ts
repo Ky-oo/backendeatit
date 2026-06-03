@@ -5,7 +5,7 @@ import {
   ForbiddenError,
   NotFoundError,
 } from "../common/exceptions.js";
-import { notifyRestaurant } from "./websocket.service.js";
+import { notifyRestaurant, notifyUser } from "./websocket.service.js";
 import type { OrderItemInput, OrderStatus } from "../schemas/orders.schema.js";
 
 type CreateOrderInput = {
@@ -21,6 +21,23 @@ type Actor = {
 
 type UpdateOrderInput = {
   status: "CONFIRMED" | "PREPARING" | "READY" | "DELIVERED";
+};
+
+const orderInclude = {
+  items: {
+    include: {
+      dish: true,
+    },
+  },
+  user: {
+    select: {
+      id: true,
+      email: true,
+      firstname: true,
+      lastname: true,
+      picture: true,
+    },
+  },
 };
 
 /** Valid one-step forward transitions */
@@ -79,33 +96,29 @@ export default class OrderService {
           create: orderItemsData,
         },
       },
-      include: { items: true },
+      include: orderInclude,
     });
 
-    notifyRestaurant(input.restaurantId, "new-order", {
-      orderId: order.id,
-      totalPrice: order.total,
-      itemCount: order.items.length,
-      createdAt: order.date.toISOString(),
-    });
+    notifyRestaurant(input.restaurantId, "new-order", order);
+    notifyUser(input.userId, "order-created", order);
 
-    return { order };
+    return { data: order };
   };
 
   getUserOrders = async (userId: string) => {
     const orders = await this.prisma.order.findMany({
       where: { userId },
-      include: { items: true },
+      include: orderInclude,
       orderBy: { date: "desc" },
     });
 
-    return { orders };
+    return { data: orders };
   };
 
   getOrderById = async (id: string, actor: Actor) => {
     const order = await this.prisma.order.findUnique({
       where: { id },
-      include: { items: true, restaurant: true },
+      include: { ...orderInclude, restaurant: true },
     });
 
     if (!order) {
@@ -121,7 +134,7 @@ export default class OrderService {
       throw new ForbiddenError("You do not have access to this order");
     }
 
-    return { order };
+    return { data: order };
   };
 
   getRestaurantOwnerOrders = async (ownerId: string) => {
@@ -131,11 +144,36 @@ export default class OrderService {
           userId: ownerId,
         },
       },
-      include: { items: true },
+      include: orderInclude,
       orderBy: { date: "desc" },
     });
 
-    return { orders };
+    return { data: orders };
+  };
+
+  getRestaurantOrders = async (restaurantId: string, actor: Actor) => {
+    const restaurant = await this.prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+    });
+
+    if (!restaurant) {
+      throw new NotFoundError("Restaurant not found");
+    }
+
+    const isRestaurantOwner = restaurant.userId === actor.id;
+    const isAdmin = actor.role === "ADMIN";
+
+    if (!isRestaurantOwner && !isAdmin) {
+      throw new ForbiddenError("You do not have access to this restaurant");
+    }
+
+    const orders = await this.prisma.order.findMany({
+      where: { restaurantId },
+      include: orderInclude,
+      orderBy: { date: "desc" },
+    });
+
+    return { data: orders };
   };
 
   updateOrder = async (id: string, input: UpdateOrderInput, actor: Actor) => {
@@ -157,6 +195,22 @@ export default class OrderService {
       );
     }
 
+    if (order.status === input.status) {
+      const currentOrder = await this.prisma.order.findUnique({
+        where: { id },
+        include: orderInclude,
+      });
+
+      if (!currentOrder) {
+        throw new NotFoundError("Order not found");
+      }
+
+      notifyRestaurant(order.restaurantId, "order-updated", currentOrder);
+      notifyUser(currentOrder.userId, "order-updated", currentOrder);
+
+      return { data: currentOrder };
+    }
+
     // Validate transition: must follow PENDING→CONFIRMED→PREPARING→READY→DELIVERED
     const expectedNext = VALID_TRANSITIONS[order.status as OrderStatus];
     if (!expectedNext || expectedNext !== input.status) {
@@ -168,10 +222,13 @@ export default class OrderService {
     const updated = await this.prisma.order.update({
       where: { id },
       data: { status: input.status },
-      include: { items: true },
+      include: orderInclude,
     });
 
-    return { order: updated };
+    notifyRestaurant(order.restaurantId, "order-updated", updated);
+    notifyUser(updated.userId, "order-updated", updated);
+
+    return { data: updated };
   };
 
   deleteOrder = async (id: string, actor: Actor): Promise<void> => {
@@ -199,5 +256,9 @@ export default class OrderService {
     }
 
     await this.prisma.order.delete({ where: { id } });
+
+    const payload = { orderId: id };
+    notifyRestaurant(order.restaurantId, "order-cancelled", payload);
+    notifyUser(order.userId, "order-cancelled", payload);
   };
 }

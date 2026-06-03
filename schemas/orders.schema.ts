@@ -30,6 +30,15 @@ export const OrderItemSchema = Type.Object({
   dishId: Type.String(),
   quantity: Type.Integer(),
   price: Type.Number(),
+  dish: Type.Optional(
+    Type.Object({
+      id: Type.String(),
+      name: Type.String(),
+      description: Type.String(),
+      price: Type.Number(),
+      image: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    }),
+  ),
 });
 
 export const OrderSchema = Type.Object({
@@ -40,14 +49,23 @@ export const OrderSchema = Type.Object({
   total: Type.Number(),
   status: Type.String(),
   items: Type.Array(OrderItemSchema),
+  user: Type.Optional(
+    Type.Object({
+      id: Type.String(),
+      email: Type.String(),
+      firstname: Type.String(),
+      lastname: Type.String(),
+      picture: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    }),
+  ),
 });
 
 export const CreateOrderResponseSchema = Type.Object({
-  order: OrderSchema,
+  data: OrderSchema,
 });
 
 export const GetOrdersResponseSchema = Type.Object({
-  orders: Type.Array(OrderSchema),
+  data: Type.Array(OrderSchema),
 });
 
 export type CreateOrderRequest = Static<typeof CreateOrderSchema>;

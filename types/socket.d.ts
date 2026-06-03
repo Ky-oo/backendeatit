@@ -3,6 +3,6 @@ import type { WebSocket } from "@fastify/websocket";
 
 export interface AuthenticatedWebSocket {
   user: User;
-  restaurantId: string;
+  restaurantId?: string;
   socket: WebSocket;
 }

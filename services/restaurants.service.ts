@@ -1,4 +1,4 @@
-import type { PrismaClient, User } from "../generated/prisma/client.js";
+import type { PrismaClient } from "../generated/prisma/client.js";
 import {
   ConflictError,
   ForbiddenError,
@@ -19,7 +19,7 @@ type CreateRestaurantInput = {
 };
 
 type CreateRestaurantResponse = {
-  restaurant: Restaurant;
+  data: Restaurant;
 };
 
 type GetAllRestaurantsInput = {
@@ -28,16 +28,12 @@ type GetAllRestaurantsInput = {
   cuisine?: string;
 };
 
-type GetAllRestaurantResponse = {
-  restaurants: Restaurant[];
-};
-
 type GetRestaurantByIdResponse = {
-  restaurant: Restaurant | null;
+  data: Restaurant | null;
 };
 
 type GetMyRestaurantResponse = {
-  restaurants: Restaurant[];
+  data: Restaurant[];
 };
 
 export default class RestaurantService {
@@ -73,7 +69,7 @@ export default class RestaurantService {
       },
     });
     return {
-      restaurant: {
+      data: {
         id: newRestaurant.id,
         cuisine: newRestaurant.cuisine,
         deliveryFee: newRestaurant.deliveryFee,
@@ -120,7 +116,7 @@ export default class RestaurantService {
       },
     });
     return {
-      restaurant,
+      data: restaurant,
     };
   };
 
@@ -133,7 +129,7 @@ export default class RestaurantService {
       },
     });
     return {
-      restaurants,
+      data: restaurants,
     };
   };
 

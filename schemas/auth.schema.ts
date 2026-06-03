@@ -18,45 +18,37 @@ export const RegisterSchema = Type.Object({
   details: Type.Optional(Type.String({ minLength: 2 })),
 });
 
-export const UserResponseSchema = Type.Object({
-  id: Type.String(),
-  email: Type.String(),
-  role: Type.String(),
-  firstname: Type.String(),
-  lastname: Type.String(),
-  picture: Type.Optional(Type.String({ format: "uri" })),
-  phoneNumber: Type.Optional(Type.String()),
-  city: Type.String(),
-  cp: Type.String(),
-  address: Type.String(),
-  details: Type.Optional(Type.String()),
-});
-
 export const TokenResponseSchema = Type.Object({
-  token: Type.String(),
-  refreshToken: Type.String(),
+  data: Type.Object({
+    token: Type.String(),
+    refreshToken: Type.String(),
+  }),
 });
 
 export const RefreshTokenSchema = Type.Object({
   refreshToken: Type.String({ minLength: 1 }),
 });
 
-export const ErrorResponseSchema = Type.Object({
-  error: Type.Object({
-    statusCode: Type.Number(),
-    message: Type.String(),
+export const UserResponseSchema = Type.Object({
+  data: Type.Object({
+    id: Type.String(),
+    email: Type.String(),
+    role: Type.String(),
+    firstname: Type.String(),
+    lastname: Type.String(),
+    picture: Type.Optional(Type.String({ format: "uri" })),
+    phoneNumber: Type.Optional(Type.String()),
+    city: Type.String(),
+    cp: Type.String(),
+    address: Type.String(),
+    details: Type.Optional(Type.String()),
   }),
 });
-
-export type LoginRequest = Static<typeof LoginSchema>;
-export type RegisterRequest = Static<typeof RegisterSchema>;
-export type RefreshTokenRequest = Static<typeof RefreshTokenSchema>;
-export type UserResponse = Static<typeof UserResponseSchema>;
-export type TokenResponse = Static<typeof TokenResponseSchema>;
-
 export const AuthMeResponseSchema = Type.Object({
-  id: Type.String({ description: "User ID" }),
-  email: Type.String({ format: "email", description: "User email" }),
-  role: Type.String({ description: "User role: USER, RESTAURANT or ADMIN" }),
+  data: Type.Object({
+    id: Type.String({ description: "User ID" }),
+    email: Type.String({ format: "email", description: "User email" }),
+    role: Type.String({ description: "User role: USER, RESTAURANT or ADMIN" }),
+  }),
 });
 export type AuthMeResponse = Static<typeof AuthMeResponseSchema>;

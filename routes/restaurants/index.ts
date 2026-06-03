@@ -87,10 +87,10 @@ export const RestaurantsRoutes = async (app: FastifyInstance) => {
       const restaurant = await restaurantService.getRestaurantById(
         request.params.id,
       );
-      if (!restaurant.restaurant) {
+      if (!restaurant.data) {
         return reply.status(404).send({ error: "Restaurant not found" });
       }
-      return reply.status(200).send(restaurant);
+      return reply.status(200).send({ data: restaurant.data });
     },
   );
 
@@ -151,7 +151,7 @@ export const RestaurantsRoutes = async (app: FastifyInstance) => {
         request.body,
         request.user,
       );
-      return reply.status(200).send({ restaurant });
+      return reply.status(200).send({ data: restaurant });
     },
   );
 

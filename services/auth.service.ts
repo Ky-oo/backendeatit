@@ -22,17 +22,19 @@ export interface RegisterInput {
 }
 
 export interface AuthResponse {
-  id: string;
-  email: string;
-  role: string;
-  firstname: string;
-  lastname: string;
-  picture?: string;
-  phoneNumber?: string;
-  city: string;
-  cp: string;
-  address: string;
-  details?: string;
+  data: {
+    id: string;
+    email: string;
+    role: string;
+    firstname: string;
+    lastname: string;
+    picture?: string;
+    phoneNumber?: string;
+    city: string;
+    cp: string;
+    address: string;
+    details?: string;
+  };
 }
 
 export default class AuthService {
@@ -71,17 +73,19 @@ export default class AuthService {
       },
     });
     return {
-      id: newUser.id,
-      email: newUser.email,
-      role: newUser.role,
-      firstname: newUser.firstname,
-      lastname: newUser.lastname,
-      picture: newUser.picture ?? undefined,
-      phoneNumber: newUser.phoneNumber ?? undefined,
-      city: newUser.city,
-      cp: newUser.cp,
-      address: newUser.address,
-      details: newUser.details ?? undefined,
+      data: {
+        id: newUser.id,
+        email: newUser.email,
+        role: newUser.role,
+        firstname: newUser.firstname,
+        lastname: newUser.lastname,
+        picture: newUser.picture ?? undefined,
+        phoneNumber: newUser.phoneNumber ?? undefined,
+        city: newUser.city,
+        cp: newUser.cp,
+        address: newUser.address,
+        details: newUser.details ?? undefined,
+      },
     };
   };
 
@@ -104,17 +108,19 @@ export default class AuthService {
     }
 
     return {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      firstname: user.firstname,
-      lastname: user.lastname,
-      picture: user.picture ?? undefined,
-      phoneNumber: user.phoneNumber ?? undefined,
-      city: user.city,
-      cp: user.cp,
-      address: user.address,
-      details: user.details ?? undefined,
+      data: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        picture: user.picture ?? undefined,
+        phoneNumber: user.phoneNumber ?? undefined,
+        city: user.city,
+        cp: user.cp,
+        address: user.address,
+        details: user.details ?? undefined,
+      },
     };
   };
 
@@ -173,17 +179,19 @@ export default class AuthService {
       const newRefreshToken = await this.createRefreshToken(storedToken.userId);
 
       return {
-        id: storedToken.user.id,
-        email: storedToken.user.email,
-        role: storedToken.user.role,
-        firstname: storedToken.user.firstname,
-        lastname: storedToken.user.lastname,
-        picture: storedToken.user.picture ?? undefined,
-        phoneNumber: storedToken.user.phoneNumber ?? undefined,
-        city: storedToken.user.city,
-        cp: storedToken.user.cp,
-        address: storedToken.user.address,
-        details: storedToken.user.details ?? undefined,
+        data: {
+          id: storedToken.user.id,
+          email: storedToken.user.email,
+          role: storedToken.user.role,
+          firstname: storedToken.user.firstname,
+          lastname: storedToken.user.lastname,
+          picture: storedToken.user.picture ?? undefined,
+          phoneNumber: storedToken.user.phoneNumber ?? undefined,
+          city: storedToken.user.city,
+          cp: storedToken.user.cp,
+          address: storedToken.user.address,
+          details: storedToken.user.details ?? undefined,
+        },
         refreshToken: newRefreshToken,
       };
     }

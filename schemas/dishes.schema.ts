@@ -18,7 +18,7 @@ export const CreateDishSchema = Type.Object({
 });
 
 export const CreateDishResponseSchema = Type.Object({
-  dish: DishSchema,
+  data: DishSchema,
 });
 
 export const UpdateDishSchema = Type.Partial(
@@ -31,11 +31,11 @@ export const UpdateDishSchema = Type.Partial(
 );
 
 export const UpdateDishResponseSchema = Type.Object({
-  dish: DishSchema,
+  data: DishSchema,
 });
 
 export const DishListResponseSchema = Type.Object({
-  dishes: Type.Array(DishSchema),
+  data: Type.Array(DishSchema),
 });
 
 export type Dish = Static<typeof DishSchema>;

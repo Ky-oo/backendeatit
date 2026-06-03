@@ -1,5 +1,5 @@
 import fastify, { FastifyReply, FastifyRequest } from "fastify";
-import cors from "@fastify/cors";
+import cors, { type OriginFunction } from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import "./plugins/dotenvx.js";
 import swagger from "@fastify/swagger";
@@ -26,8 +26,31 @@ const start = async () => {
   try {
     const port = Number(process.env.PORT) || 3000;
     const host = "0.0.0.0";
+    const configuredCorsOrigins =
+      process.env.CORS_ORIGINS?.split(",")
+        .map((origin) => origin.trim())
+        .filter(Boolean) ?? ["http://localhost:3002"];
 
-    await server.register(cors, {});
+    const isAllowedLocalOrigin = (origin: string) =>
+      /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin);
+    const corsOrigin: OriginFunction = (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      callback(
+        null,
+        configuredCorsOrigins.includes(origin) || isAllowedLocalOrigin(origin),
+      );
+    };
+
+    await server.register(cors, {
+      origin: corsOrigin,
+      credentials: true,
+      preflight: true,
+      strictPreflight: false,
+    });
 
     await server.register(rateLimit, {
       global: true,

@@ -26,17 +26,17 @@ export const CreateRestaurantSchema = Type.Object({
 });
 
 export const CreateRestaurantResponseSchema = Type.Object({
-  restaurant: RestaurantSchema,
+  data: RestaurantSchema,
 });
 
 export const UpdateRestaurantSchema = Type.Partial(CreateRestaurantSchema);
 
 export const UpdateRestaurantResponseSchema = Type.Object({
-  restaurant: RestaurantSchema,
+  data: RestaurantSchema,
 });
 
 export const getAllResturantsResponseSchema = Type.Object({
-  restaurants: Type.Array(RestaurantSchema),
+  data: Type.Array(RestaurantSchema),
 });
 
 export type Restaurant = Static<typeof RestaurantSchema>;

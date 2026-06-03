@@ -31,7 +31,7 @@ export default class DishService {
   createDish = async (
     input: CreateDishInput,
     actor: Actor,
-  ): Promise<{ dish: Dish }> => {
+  ): Promise<{ data: Dish }> => {
     const restaurant = await this.prisma.restaurant.findUnique({
       where: { id: input.restaurantId },
     });
@@ -54,7 +54,7 @@ export default class DishService {
       },
     });
 
-    return { dish };
+    return { data: dish };
   };
 
   getDishesByRestaurant = async (
@@ -97,7 +97,7 @@ export default class DishService {
     };
   };
 
-  getDishById = async (id: string): Promise<{ dish: Dish }> => {
+  getDishById = async (id: string): Promise<{ data: Dish }> => {
     const dish = await this.prisma.dish.findUnique({
       where: { id },
     });
@@ -106,14 +106,14 @@ export default class DishService {
       throw new NotFoundError("Dish not found");
     }
 
-    return { dish };
+    return { data: dish };
   };
 
   updateDish = async (
     id: string,
     updateData: UpdateDishInput,
     actor: Actor,
-  ): Promise<{ dish: Dish }> => {
+  ): Promise<{ data: Dish }> => {
     const dish = await this.prisma.dish.findUnique({
       where: { id },
       include: { restaurant: true },
@@ -132,7 +132,7 @@ export default class DishService {
       data: updateData,
     });
 
-    return { dish: updated };
+    return { data: updated };
   };
 
   deleteDish = async (id: string, actor: Actor): Promise<void> => {

@@ -99,8 +99,8 @@ export const createRestaurantResolvers = (
       });
       if (!user) throw new UnauthorizedError("User not found");
       const dishService = new DishService(app.prisma);
-      const { dish } = await dishService.createDish(input, user);
-      return dish;
+      const { data } = await dishService.createDish(input, user);
+      return data;
     },
 
     updateDish: async (
@@ -127,8 +127,8 @@ export const createRestaurantResolvers = (
       });
       if (!user) throw new UnauthorizedError("User not found");
       const dishService = new DishService(app.prisma);
-      const { dish } = await dishService.updateDish(id, input, user);
-      return dish;
+      const { data } = await dishService.updateDish(id, input, user);
+      return data;
     },
 
     createOrder: async (
@@ -146,12 +146,12 @@ export const createRestaurantResolvers = (
       const userId = context.auth?.id;
       if (!userId) throw new UnauthorizedError("Authentication required");
       const orderService = new OrderService(app.prisma);
-      const { order } = await orderService.createOrder({
+      const { data } = await orderService.createOrder({
         userId,
         restaurantId: input.restaurantId,
         items: input.items,
       });
-      return order;
+      return data;
     },
 
     updateOrderStatus: async (
@@ -176,12 +176,12 @@ export const createRestaurantResolvers = (
         throw new Error(`Invalid status. Allowed: ${validStatuses.join(", ")}`);
       }
       const orderService = new OrderService(app.prisma);
-      const { order } = await orderService.updateOrder(
+      const { data } = await orderService.updateOrder(
         id,
         { status: status as "CONFIRMED" | "PREPARING" | "READY" | "DELIVERED" },
         user,
       );
-      return order;
+      return data;
     },
   },
 });

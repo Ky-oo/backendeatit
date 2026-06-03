@@ -8,15 +8,12 @@ import {
   TokenResponseSchema,
   UserResponseSchema,
   AuthMeResponseSchema,
-  type LoginRequest,
-  type RefreshTokenRequest,
-  type RegisterRequest,
 } from "../../schemas/auth.schema.js";
 import { ErrorResponseSchema } from "../../schemas/error.schema.js";
 
 export const authRoutes = async (app: FastifyInstance) => {
   const authService = new AuthService(app.prisma);
-  app.post<{ Body: RegisterRequest }>(
+  app.post(
     "/register",
     {
       config: {
@@ -35,16 +32,17 @@ export const authRoutes = async (app: FastifyInstance) => {
         },
       },
     },
-    async (
-      request: FastifyRequest<{ Body: RegisterRequest }>,
-      reply: FastifyReply,
-    ) => {
-      const user = await authService.register(request.body);
-      return reply.status(201).send(user);
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = await authService.register(request.body as any);
+      app.log.info(
+        { userRegisterResponse: user },
+        "Register response structure",
+      );
+      return reply.status(201).send({ data: user.data });
     },
   );
 
-  app.post<{ Body: LoginRequest }>(
+  app.post(
     "/login",
     {
       config: {
@@ -63,20 +61,16 @@ export const authRoutes = async (app: FastifyInstance) => {
         },
       },
     },
-    async (
-      request: FastifyRequest<{ Body: LoginRequest }>,
-      reply: FastifyReply,
-    ) => {
-      app.log.info({ email: request.body.email }, "Login attempt");
-      const user = await authService.login(request.body);
-      const token = app.jwt.sign({ id: user.id }, { expiresIn: "15m" });
-      const refreshToken = await authService.createRefreshToken(user.id);
-      app.log.info("New access token generated for user:" + user);
-      return reply.status(200).send({ token, refreshToken });
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const body = request.body as any;
+      const user = await authService.login(body);
+      const token = app.jwt.sign({ id: user.data.id }, { expiresIn: "15m" });
+      const refreshToken = await authService.createRefreshToken(user.data.id);
+      return reply.status(200).send({ data: { token, refreshToken } });
     },
   );
 
-  app.post<{ Body: RefreshTokenRequest }>(
+  app.post(
     "/refresh",
     {
       schema: {
@@ -89,18 +83,13 @@ export const authRoutes = async (app: FastifyInstance) => {
         },
       },
     },
-    async (
-      request: FastifyRequest<{ Body: RefreshTokenRequest }>,
-      reply: FastifyReply,
-    ) => {
-      const user = await authService.rotateRefreshToken(
-        request.body.refreshToken,
-      );
-      const token = app.jwt.sign({ id: user.id }, { expiresIn: "15m" });
-      return reply.status(200).send({
-        token,
-        refreshToken: user.refreshToken,
-      });
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const body = request.body as any;
+      const user = await authService.rotateRefreshToken(body.refreshToken);
+      const token = app.jwt.sign({ id: user.data.id }, { expiresIn: "15m" });
+      return reply
+        .status(200)
+        .send({ data: { token, refreshToken: user.refreshToken } });
     },
   );
 
@@ -117,7 +106,7 @@ export const authRoutes = async (app: FastifyInstance) => {
       onRequest: [app.authenticate],
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      return request.user;
+      return reply.status(200).send({ data: request.user });
     },
   );
 };

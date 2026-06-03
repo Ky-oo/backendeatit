@@ -54,6 +54,36 @@ export const ordersRoutes = async (app: FastifyInstance) => {
     },
   );
 
+  app.get<{ Params: { restaurantId: string } }>(
+    "/restaurant/:restaurantId",
+    {
+      schema: {
+        description:
+          "Get all orders for a single restaurant owned by the authenticated user",
+        params: Type.Object({
+          restaurantId: Type.String({ description: "Restaurant ID" }),
+        }),
+        response: {
+          200: GetOrdersResponseSchema,
+          401: ErrorResponseSchema,
+          403: ErrorResponseSchema,
+          404: ErrorResponseSchema,
+        },
+      },
+      onRequest: [app.authorize(["RESTAURANT"])],
+    },
+    async (
+      request: FastifyRequest<{ Params: { restaurantId: string } }>,
+      reply: FastifyReply,
+    ) => {
+      const result = await orderService.getRestaurantOrders(
+        request.params.restaurantId,
+        request.user,
+      );
+      return reply.status(200).send(result);
+    },
+  );
+
   app.get<{ Params: { id: string } }>(
     "/:id",
     {

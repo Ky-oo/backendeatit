@@ -1,17 +1,19 @@
 import { Type, Static } from "@sinclair/typebox";
 
 export const UserProfileSchema = Type.Object({
-  id: Type.String(),
-  email: Type.String({ format: "email" }),
-  role: Type.String(),
-  firstname: Type.String(),
-  lastname: Type.String(),
-  picture: Type.Optional(Type.String()),
-  phoneNumber: Type.Optional(Type.String()),
-  city: Type.String(),
-  cp: Type.String(),
-  address: Type.String(),
-  details: Type.Optional(Type.String()),
+  data: Type.Object({
+    id: Type.String(),
+    email: Type.String({ format: "email" }),
+    role: Type.String(),
+    firstname: Type.String(),
+    lastname: Type.String(),
+    picture: Type.Optional(Type.String()),
+    phoneNumber: Type.Optional(Type.String()),
+    city: Type.String(),
+    cp: Type.String(),
+    address: Type.String(),
+    details: Type.Optional(Type.String()),
+  }),
 });
 
 export const UpdateUserSchema = Type.Partial(
@@ -29,9 +31,7 @@ export const UpdateUserSchema = Type.Partial(
   }),
 );
 
-export const UpdateUserResponseSchema = Type.Object({
-  user: UserProfileSchema,
-});
+export const UpdateUserResponseSchema = UserProfileSchema;
 
 export type UserProfile = Static<typeof UserProfileSchema>;
 export type UpdateUserRequest = Static<typeof UpdateUserSchema>;

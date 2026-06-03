@@ -33,17 +33,19 @@ export default class UserService {
       throw new NotFoundError("User not found");
     }
     return {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      firstname: user.firstname,
-      lastname: user.lastname,
-      picture: user.picture ?? undefined,
-      phoneNumber: user.phoneNumber ?? undefined,
-      city: user.city,
-      cp: user.cp,
-      address: user.address,
-      details: user.details ?? undefined,
+      data: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        picture: user.picture ?? undefined,
+        phoneNumber: user.phoneNumber ?? undefined,
+        city: user.city,
+        cp: user.cp,
+        address: user.address,
+        details: user.details ?? undefined,
+      },
     };
   };
 
@@ -51,7 +53,7 @@ export default class UserService {
     id: string,
     requesterId: string,
     input: UpdateUserInput,
-  ): Promise<{ user: UserProfile }> => {
+  ): Promise<UserProfile> => {
     if (id !== requesterId) {
       throw new ForbiddenError("You can only update your own profile");
     }
@@ -77,7 +79,7 @@ export default class UserService {
     });
 
     return {
-      user: {
+      data: {
         id: updated.id,
         email: updated.email,
         role: updated.role,
